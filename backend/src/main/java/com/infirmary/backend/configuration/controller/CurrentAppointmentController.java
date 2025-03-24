@@ -28,12 +28,12 @@ public class CurrentAppointmentController {
      * @return ResponseEntity with the current token number.
      */
     @PreAuthorize("hasRole('ROLE_AD') or hasRole('ROLE_PATIENT')")
-    @GetMapping("/current-token")
-    public ResponseEntity<?> getCurrentTokenNumber() {
-
-        String currentTokenNumber = currentAppointmentService.getCurrentTokenNumber();
-        return ResponseEntity.ok(currentTokenNumber);
-    }
+   // CurrentAppointmentController.java
+@GetMapping("/current-token")
+public ResponseEntity<?> getCurrentTokenNumber() {
+    String token = currentAppointmentService.getCurrentTokenNumber();
+    return ResponseEntity.ok(token);
+}
 
     /**
      * Fetch the current appointment details.

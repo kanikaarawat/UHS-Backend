@@ -25,7 +25,8 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
     private final CurrentAppointmentRepository currentAppointmentRepository;
     private final MessageConfigUtil messageConfigUtil;
 
-    public CurrentAppointmentServiceImpl(CurrentAppointmentRepository currentAppointmentRepository, MessageConfigUtil messageConfigUtil) {
+    public CurrentAppointmentServiceImpl(CurrentAppointmentRepository currentAppointmentRepository, 
+                                      MessageConfigUtil messageConfigUtil) {
         this.currentAppointmentRepository = currentAppointmentRepository;
         this.messageConfigUtil = messageConfigUtil;
     }
@@ -50,23 +51,14 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
             throw new CurrentAppointmentNotFoundException(messageConfigUtil.getCurrentAppointmentNotFound());
         }
 
-        if (currentAppointmentDTO == null) { // Current appointment does not exist
-            return appointmentResDTO;
-        } else {
+        if (currentAppointmentDTO.getAppointmentDTO() == null) {
             appointmentResDTO.setIsAppointedStatus(false);
-            appointmentResDTO.setIsDoctorAppointed(false);
-            if (currentAppointmentDTO.getAppointmentDTO() == null) { // CurrentAppointment exists but Appointment is null
-                return appointmentResDTO;
-            } else {
-                appointmentResDTO.setIsAppointedStatus(true);
-                if (currentAppointmentDTO.getDoctorDTO() == null) { // Appointment exists but doctor is not assigned
-                    return appointmentResDTO;
-                } else {
-                    appointmentResDTO.setIsDoctorAppointed(true);
-                    return appointmentResDTO;
-                }
-            }
+        } else {
+            appointmentResDTO.setIsAppointedStatus(true);
+            appointmentResDTO.setIsDoctorAppointed(currentAppointmentDTO.getDoctorDTO() != null);
         }
+        
+        return appointmentResDTO;
     }
 
     @Override
@@ -74,29 +66,31 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
         if (Objects.isNull(docEmail)) {
             throw new DoctorNotFoundException(messageConfigUtil.getDoctorNotFoundException());
         }
-        CurrentAppointment currAppointment = currentAppointmentRepository.findByAppointment_Doctor_DoctorEmail(docEmail)
+        CurrentAppointment currAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(docEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("No Appointment Scheduled"));
         return new CurrentAppointmentDTO(currAppointment);
     }
 
     @Override
     public CurrentAppointmentDTO getCurrentAppointmentDetails() {
-        // Fetch the current appointment details
-        Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findTopByOrderByAppointment_DateDesc();
-        return currentAppointment.map(CurrentAppointmentDTO::new).orElse(null); // Return null if no current appointment is found
+        Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findByDoctorIsNotNull();
+        return currentAppointment.map(CurrentAppointmentDTO::new).orElse(null);
     }
 
     @Override
     public String getCurrentTokenNumber() {
-        // Fetch the current token number being treated by the doctor
-        Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findTopByOrderByAppointment_DateDesc();
-        
-        if (currentAppointment.isEmpty() || currentAppointment.get().getAppointment() == null) {
-            log.warn("No active appointment found in CurrentAppointmentRepository.");
-            return "N/A";  // Avoid returning null, return a default "N/A"
+        Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findByDoctorIsNotNull();
+
+        if (currentAppointment.isEmpty()) {
+            log.warn("No doctor has an assigned appointment currently");
+            return "N/A";
         }
-    
+        
+        if (currentAppointment.get().getAppointment() == null) {
+            log.warn("Found current appointment but no linked appointment");
+            return "N/A";
+        }
+        
         return String.valueOf(currentAppointment.get().getAppointment().getTokenNo());
     }
-    
 }

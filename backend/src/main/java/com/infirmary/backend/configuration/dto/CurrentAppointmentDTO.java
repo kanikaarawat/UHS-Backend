@@ -1,11 +1,11 @@
 package com.infirmary.backend.configuration.dto;
 
-import java.util.UUID;
-
 import com.infirmary.backend.configuration.model.CurrentAppointment;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,10 +16,20 @@ public class CurrentAppointmentDTO {
     private PatientDTO patientDTO;
     private DoctorDTO doctorDTO;
 
-    public CurrentAppointmentDTO(CurrentAppointment currentAppointment){
+    public CurrentAppointmentDTO(CurrentAppointment currentAppointment) {
         this.currentAppointmentId = currentAppointment.getCurrentAppointmentId();
-        this.appointmentDTO = new AppointmentDTO(currentAppointment.getAppointment());
-        this.patientDTO = new PatientDTO(currentAppointment.getPatient());
-        this.doctorDTO = new DoctorDTO(currentAppointment.getDoctor());
+        
+        // Null-safe initialization
+        this.appointmentDTO = currentAppointment.getAppointment() != null 
+            ? new AppointmentDTO(currentAppointment.getAppointment()) 
+            : null;
+            
+        this.patientDTO = currentAppointment.getPatient() != null 
+            ? new PatientDTO(currentAppointment.getPatient()) 
+            : null;
+            
+        this.doctorDTO = currentAppointment.getDoctor() != null 
+            ? new DoctorDTO(currentAppointment.getDoctor()) 
+            : null;
     }
 }

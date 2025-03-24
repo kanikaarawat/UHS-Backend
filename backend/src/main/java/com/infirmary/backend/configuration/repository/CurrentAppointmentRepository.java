@@ -17,23 +17,15 @@ import org.springframework.stereotype.Repository;
 public interface CurrentAppointmentRepository extends JpaRepository<CurrentAppointment, UUID> {
 
     CurrentAppointment findByAppointment_AppointmentId(@NonNull UUID appointmentId);
-
     Optional<CurrentAppointment> findByPatient_Email(String email);
-
-    Optional<CurrentAppointment> findByAppointment_Doctor_DoctorEmail(String doctorEmail);
-    
-    List<CurrentAppointment> findAllByAppointmentNotNullAndDoctorIsNull();
-
     Optional<CurrentAppointment> findByDoctor_DoctorEmail(String doctorEmail);
-
+    List<CurrentAppointment> findAllByAppointmentNotNullAndDoctorIsNull();
     Optional<CurrentAppointment> findByDoctor(Doctor doctor);
-
     int countByAppointmentNotNullAndAppointment_DateNot(LocalDate date);
-
     int countByAppointmentNotNull();
-
     List<CurrentAppointment> findAllByAppointmentNotNullAndDoctorNotNullAndAppointment_Location(Location location);
-
-    Optional<CurrentAppointment> findTopByOrderByAppointment_DateDesc();
-
+    Optional<CurrentAppointment> findTopByAppointment_DateOrderByAppointment_TokenNoDesc(LocalDate date);
+    
+    // New method
+    Optional<CurrentAppointment> findByDoctorIsNotNull();
 }

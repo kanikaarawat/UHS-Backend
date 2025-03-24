@@ -29,4 +29,6 @@ public class CurrentAppointment implements Serializable {
     @ManyToOne
     @JoinColumn(name = "doctor_email", referencedColumnName = "doctor_email")
     private Doctor doctor;
+
+    
 }
