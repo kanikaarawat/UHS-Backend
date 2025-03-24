@@ -13,21 +13,31 @@ import java.util.UUID;
 @Repository
 public interface StockRepository extends JpaRepository<Stock, UUID> {
 
-    List<Stock> findByMedicineTypeIn(List<String> medicineTypes);
+        // Existing methods
+        List<Stock> findByMedicineTypeIn(List<String> type);
 
-    List<Stock> findByQuantityGreaterThanEqualOrderByQuantityDesc(Long quantity);
+        List<Stock> findByExpirationDateBefore(LocalDate expirationDate);
 
-    List<Stock> findByExpirationDateBefore(LocalDate expirationDate);
+        List<Stock> findByExpirationDateAfter(LocalDate expirationDate);
 
-    List<Stock> findByCompanyIn(List<String> companies);
+        List<Stock> findByQuantityGreaterThanEqualOrderByQuantityDesc(Long quantity);
 
-    Optional<Stock> findByBatchNumber(Long batchNumber);
+        List<Stock> findByCompanyIn(List<String> companyNames);
 
-    List<Stock> findByQuantityNull();
+        Optional<Stock> findByBatchNumber(Long batchNumber);
 
-    List<Stock> findByExpirationDateAfter(LocalDate expirationDate);
-    
-    List<Stock> findByQuantityGreaterThanAndLocationAndExpirationDateAfter(int quantity, Location location, LocalDate date);
+        List<Stock> findByQuantityNull();
 
-    List<Stock> findByQuantityGreaterThan(int quantity);
+        List<Stock> findByQuantityGreaterThan(Long quantity);
+
+        List<Stock> findByQuantityGreaterThanAndLocationAndExpirationDateAfter(
+                        Long quantity,
+                        Location location,
+                        LocalDate expirationDate);
+
+        List<Stock> findByMedicineNameAndBatchNumberAndLocationAndExpirationDate(
+                        String medicineName,
+                        Long batchNumber,
+                        Location location,
+                        LocalDate expirationDate);
 }

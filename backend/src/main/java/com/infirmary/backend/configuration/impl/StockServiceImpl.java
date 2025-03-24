@@ -39,7 +39,8 @@ public class StockServiceImpl implements StockService {
     private final LocationRepository locationRepository;
     private final PrescriptionMedsRepository prescriptionMedsRepository;
 
-    public StockServiceImpl(StockRepository stockRepository, MessageConfigUtil messageConfigUtil, LocationRepository locationRepository, PrescriptionMedsRepository prescriptionMedsRepository ) {
+    public StockServiceImpl(StockRepository stockRepository, MessageConfigUtil messageConfigUtil,
+            LocationRepository locationRepository, PrescriptionMedsRepository prescriptionMedsRepository) {
         this.stockRepository = stockRepository;
         this.messageConfigUtil = messageConfigUtil;
         this.locationRepository = locationRepository;
@@ -126,27 +127,113 @@ public class StockServiceImpl implements StockService {
     }
 
     @Override
-    public StockDTO addStock(StockDTO stockDTO,Long locId) throws StockAlreadyExists {
-        Stock stock = new Stock(stockDTO);
-        
-        Location location = locationRepository.findById(locId).orElseThrow(()-> new ResourceNotFoundException("No Location Found")); 
+    public StockDTO addStock(StockDTO stockDTO, Long locId) throws StockAlreadyExists {
+        Location location = locationRepository.findById(locId)
+                .orElseThrow(() -> new ResourceNotFoundException("No Location Found"));
 
-        stock.setLocation(location);
+        // Check for existing stock with all 4 criteria
+        List<Stock> existingStocks = stockRepository.findByMedicineNameAndBatchNumberAndLocationAndExpirationDate(
+                stockDTO.getMedicineName(),
+                stockDTO.getBatchNumber(),
+                location,
+                stockDTO.getExpirationDate());
 
-        Stock savedStock = stockRepository.save(stock);
-        return new StockDTO(savedStock);
+        if (!existingStocks.isEmpty()) {
+            // Merge quantities of all matching stocks
+            Stock firstStock = existingStocks.get(0);
+            long totalQuantity = existingStocks.stream()
+                    .mapToLong(Stock::getQuantity)
+                    .sum();
+
+            firstStock.setQuantity(totalQuantity + stockDTO.getQuantity());
+            Stock updatedStock = stockRepository.save(firstStock);
+
+            // Handle duplicates (soft delete or reassign prescriptions)
+            for (int i = 1; i < existingStocks.size(); i++) {
+                Stock duplicateStock = existingStocks.get(i);
+
+                // Check if the duplicate stock is referenced in prescription_medicine
+                if (prescriptionMedsRepository.existsByMedicine(duplicateStock)) {
+                    // Reassign prescriptions to the first stock
+                    prescriptionMedsRepository.reassignPrescriptions(duplicateStock, firstStock);
+                }
+
+                // Soft delete the duplicate stock (set quantity to 0)
+                duplicateStock.setQuantity(0L);
+                stockRepository.save(duplicateStock);
+            }
+
+            return new StockDTO(updatedStock);
+        } else {
+            // Create new stock with all fields
+            Stock stock = new Stock(stockDTO);
+            stock.setLocation(location);
+            Stock savedStock = stockRepository.save(stock);
+            return new StockDTO(savedStock);
+        }
+    }
+
+    @Override
+    public String editStock(StockDTO stockDTO, Long locId) {
+        Stock originalStock = stockRepository.findById(stockDTO.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Stock Not Found"));
+
+        Location newLocation = locationRepository.findById(locId)
+                .orElseThrow(() -> new ResourceNotFoundException("No location found"));
+
+        // Check for existing stock with new values
+        List<Stock> existingStocks = stockRepository.findByMedicineNameAndBatchNumberAndLocationAndExpirationDate(
+                stockDTO.getMedicineName(),
+                stockDTO.getBatchNumber(),
+                newLocation,
+                stockDTO.getExpirationDate());
+
+        if (!existingStocks.isEmpty() && !existingStocks.get(0).getId().equals(originalStock.getId())) {
+            // Merge quantities
+            Stock targetStock = existingStocks.get(0);
+            targetStock.setQuantity(targetStock.getQuantity() + originalStock.getQuantity());
+            stockRepository.save(targetStock);
+
+            // Delete original stock
+            stockRepository.delete(originalStock);
+        } else {
+            // Handle prescription constraints
+            if (prescriptionMedsRepository.existsByMedicine(originalStock)) {
+                if (!stockDTO.getCompany().equals(originalStock.getCompany()) ||
+                        !stockDTO.getComposition().equals(originalStock.getComposition()) ||
+                        !stockDTO.getMedicineName().equals(originalStock.getMedicineName()) ||
+                        !stockDTO.getMedicineType().equals(originalStock.getMedicineType())) {
+                    throw new IllegalArgumentException("The Stock has been prescribed");
+                }
+            }
+
+            // Update all fields including location and expiration date
+            originalStock.setBatchNumber(stockDTO.getBatchNumber());
+            originalStock.setCompany(stockDTO.getCompany());
+            originalStock.setComposition(stockDTO.getComposition());
+            originalStock.setExpirationDate(stockDTO.getExpirationDate());
+            originalStock.setLocation(newLocation);
+            originalStock.setMedicineName(stockDTO.getMedicineName());
+            originalStock.setMedicineType(stockDTO.getMedicineType());
+            originalStock.setQuantity(stockDTO.getQuantity());
+
+            stockRepository.save(originalStock);
+        }
+
+        return "Stock updated successfully";
     }
 
     public byte[] exportStocksToExcel() throws IOException {
         List<Stock> stocks = stockRepository.findAll();
 
         try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Medicine Stocks");
 
             Row headerRow = sheet.createRow(0);
-            String[] columns = {"Batch Number", "Medicine Name", "Composition", "Quantity", "Medicine Type", "Expiration Date", "Company","Location"};
+            String[] columns = { "Batch Number", "Medicine Name", "Composition", "Quantity", "Medicine Type",
+                    "Expiration Date", "Company", "Location" };
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
@@ -176,10 +263,9 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public List<Stock> getAllStocks() {
-        return stockRepository.findByQuantityGreaterThan(0);
+        return stockRepository.findByQuantityGreaterThan(0L);
     }
 
-    
     @Override
     public void deleteStock(UUID stockUuid) throws StockNotFoundException {
         Optional<Stock> batch = stockRepository.findById(stockUuid);
@@ -187,48 +273,31 @@ public class StockServiceImpl implements StockService {
             throw new StockNotFoundException(messageConfigUtil.getStockNotFound());
         }
         Stock newStock = batch.get();
-        newStock.setQuantity(Long.valueOf(0));
+        newStock.setQuantity(0L);
         stockRepository.save(newStock);
     }
 
     @Override
     public List<Stock> getAvailableStock(Double longitude, Double latitude) {
-         if(longitude == null || latitude == null) throw new IllegalArgumentException("No Location Mentioned");
+        if (longitude == null || latitude == null)
+            throw new IllegalArgumentException("No Location Mentioned");
 
-            List<Location> locations = locationRepository.findAll();
-            Location presentLocation = null;
+        List<Location> locations = locationRepository.findAll();
+        Location presentLocation = null;
 
-            for(Location location:locations){
-                if(FunctionUtil.IsWithinRadius(location.getLatitude(), location.getLongitude(), latitude, longitude)){
-                    presentLocation = location;
-                    break;
-                }
+        for (Location location : locations) {
+            if (FunctionUtil.IsWithinRadius(location.getLatitude(), location.getLongitude(), latitude, longitude)) {
+                presentLocation = location;
+                break;
+            }
         }
 
-        if(presentLocation == null) throw new IllegalArgumentException("Must be present on location");
-        
-        return stockRepository.findByQuantityGreaterThanAndLocationAndExpirationDateAfter(0,presentLocation,Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.of("Asia/Kolkata")).toLocalDate());
-    }
+        if (presentLocation == null)
+            throw new IllegalArgumentException("Must be present on location");
 
-    @Override
-    public String editStock(StockDTO stockDTO,Long locId) {
-        Stock stock = stockRepository.findById(stockDTO.getId()).orElseThrow(() -> new ResourceNotFoundException("Stock Not Found"));
-
-        if(prescriptionMedsRepository.existsByMedicine(stock)){
-            if(!(stockDTO.getCompany().equals(stock.getCompany())) || !(stockDTO.getComposition().equals(stockDTO.getComposition())) || !(stockDTO.getMedicineName().equals(stock.getMedicineName())) || !(stockDTO.getMedicineType().equals(stock.getMedicineType()))) throw new IllegalArgumentException("The Stock has been prescribed");
-        }
-        stock.setBatchNumber(stockDTO.getBatchNumber());
-        stock.setCompany(stockDTO.getCompany());
-        stock.setComposition(stockDTO.getComposition());
-        stock.setExpirationDate(stockDTO.getExpirationDate());
-        stock.setLocation(locationRepository.findById(locId).orElseThrow(()->new ResourceNotFoundException("No location found")));
-        stock.setMedicineName(stockDTO.getMedicineName());
-        stock.setMedicineType(stockDTO.getMedicineType());
-        stock.setQuantity(stockDTO.getQuantity());
-
-        stockRepository.save(stock);
-
-        return "Stock Edited Successfully";
-
+        return stockRepository.findByQuantityGreaterThanAndLocationAndExpirationDateAfter(
+                0L,
+                presentLocation,
+                Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.of("Asia/Kolkata")).toLocalDate());
     }
 }
