@@ -177,37 +177,56 @@ public class StockServiceImpl implements StockService {
     public String editStock(StockDTO stockDTO, Long locId) {
         Stock originalStock = stockRepository.findById(stockDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Stock Not Found"));
-
+    
         Location newLocation = locationRepository.findById(locId)
                 .orElseThrow(() -> new ResourceNotFoundException("No location found"));
-
-        // Check for existing stock with new values
+    
+        // Fetch existing stock excluding the current one
         List<Stock> existingStocks = stockRepository.findByMedicineNameAndBatchNumberAndLocationAndExpirationDate(
                 stockDTO.getMedicineName(),
                 stockDTO.getBatchNumber(),
                 newLocation,
                 stockDTO.getExpirationDate());
-
-        if (!existingStocks.isEmpty() && !existingStocks.get(0).getId().equals(originalStock.getId())) {
-            // Merge quantities
+    
+        // Filter out the stock being edited
+        existingStocks = existingStocks.stream()
+                .filter(stock -> !stock.getId().equals(originalStock.getId()))
+                .toList();
+    
+        if (!existingStocks.isEmpty()) {
+            // Merge quantities with the first matching stock
             Stock targetStock = existingStocks.get(0);
+    
+            // Add quantities
             targetStock.setQuantity(targetStock.getQuantity() + originalStock.getQuantity());
+    
+            // Save the merged stock
             stockRepository.save(targetStock);
-
-            // Delete original stock
-            stockRepository.delete(originalStock);
-        } else {
-            // Handle prescription constraints
+    
+            // Reassign prescriptions if the original stock is referenced
             if (prescriptionMedsRepository.existsByMedicine(originalStock)) {
-                if (!stockDTO.getCompany().equals(originalStock.getCompany()) ||
-                        !stockDTO.getComposition().equals(originalStock.getComposition()) ||
-                        !stockDTO.getMedicineName().equals(originalStock.getMedicineName()) ||
-                        !stockDTO.getMedicineType().equals(originalStock.getMedicineType())) {
-                    throw new IllegalArgumentException("The Stock has been prescribed");
+                prescriptionMedsRepository.reassignPrescriptions(originalStock, targetStock);
+            }
+    
+            // Delete the original stock
+            stockRepository.delete(originalStock);
+    
+            return "Stocks merged successfully";
+        } else {
+            // Handle prescription constraints on changes
+            if (prescriptionMedsRepository.existsByMedicine(originalStock)) {
+                boolean criticalChange = 
+                    !stockDTO.getCompany().equals(originalStock.getCompany()) ||
+                    !stockDTO.getComposition().equals(originalStock.getComposition()) ||
+                    !stockDTO.getMedicineName().equals(originalStock.getMedicineName()) ||
+                    !stockDTO.getMedicineType().equals(originalStock.getMedicineType());
+    
+                if (criticalChange) {
+                    throw new IllegalArgumentException("The Stock has been prescribed. Critical fields cannot be modified.");
                 }
             }
-
-            // Update all fields including location and expiration date
+    
+            // Update the original stock fields
             originalStock.setBatchNumber(stockDTO.getBatchNumber());
             originalStock.setCompany(stockDTO.getCompany());
             originalStock.setComposition(stockDTO.getComposition());
@@ -216,12 +235,12 @@ public class StockServiceImpl implements StockService {
             originalStock.setMedicineName(stockDTO.getMedicineName());
             originalStock.setMedicineType(stockDTO.getMedicineType());
             originalStock.setQuantity(stockDTO.getQuantity());
-
+    
             stockRepository.save(originalStock);
+    
+            return "Stock updated successfully";
         }
-
-        return "Stock updated successfully";
-    }
+    }    
 
     public byte[] exportStocksToExcel() throws IOException {
         List<Stock> stocks = stockRepository.findAll();
