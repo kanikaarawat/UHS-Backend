@@ -181,10 +181,11 @@ public class DoctorController {
 
     //Get Available Stock for Doctor
     @PreAuthorize("hasRole('ROLE_DOCTOR')")
-    @GetMapping(value = "/stock/available")
-    public ResponseEntity<?> getAvailableStock(@RequestHeader(name = "X-Latitude",required = true) Double latitude, @RequestHeader(name = "X-Longitude", required = true) Double longitude){
-        return ResponseEntity.ok(stockService.getAvailableStock(longitude,latitude));
-    }
+@GetMapping(value = "/stock/available")
+public ResponseEntity<?> getAvailableStock() {
+    String doctorEmail = getTokenClaims();
+    return ResponseEntity.ok(stockService.getAvailableStockByDoctorLocation(doctorEmail));
+}
 
     //Get All Prescriptions of a patient
     @PostAuthorize("hasRole('ROLE_DOCTOR')")

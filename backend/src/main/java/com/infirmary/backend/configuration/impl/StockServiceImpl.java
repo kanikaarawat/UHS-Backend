@@ -1,8 +1,9 @@
 package com.infirmary.backend.configuration.impl;
-
+import com.infirmary.backend.configuration.repository.CurrentAppointmentRepository;
 import com.infirmary.backend.configuration.Exception.StockAlreadyExists;
 import com.infirmary.backend.configuration.Exception.StockNotFoundException;
 import com.infirmary.backend.configuration.dto.StockDTO;
+import com.infirmary.backend.configuration.model.CurrentAppointment;
 import com.infirmary.backend.configuration.model.Location;
 import com.infirmary.backend.configuration.model.Stock;
 import com.infirmary.backend.configuration.repository.LocationRepository;
@@ -38,14 +39,21 @@ public class StockServiceImpl implements StockService {
     private final MessageConfigUtil messageConfigUtil;
     private final LocationRepository locationRepository;
     private final PrescriptionMedsRepository prescriptionMedsRepository;
+    private final CurrentAppointmentRepository currentAppointmentRepository;
 
-    public StockServiceImpl(StockRepository stockRepository, MessageConfigUtil messageConfigUtil,
-            LocationRepository locationRepository, PrescriptionMedsRepository prescriptionMedsRepository) {
-        this.stockRepository = stockRepository;
-        this.messageConfigUtil = messageConfigUtil;
-        this.locationRepository = locationRepository;
-        this.prescriptionMedsRepository = prescriptionMedsRepository;
-    }
+
+    public StockServiceImpl(StockRepository stockRepository,
+                        MessageConfigUtil messageConfigUtil,
+                        LocationRepository locationRepository,
+                        PrescriptionMedsRepository prescriptionMedsRepository,
+                        CurrentAppointmentRepository currentAppointmentRepository) {
+    this.stockRepository = stockRepository;
+    this.messageConfigUtil = messageConfigUtil;
+    this.locationRepository = locationRepository;
+    this.prescriptionMedsRepository = prescriptionMedsRepository;
+    this.currentAppointmentRepository = currentAppointmentRepository;
+}
+
 
     @Override
     public List<StockDTO> getStockByTypeIn(List<String> type) throws StockNotFoundException {
@@ -319,4 +327,21 @@ public class StockServiceImpl implements StockService {
                 presentLocation,
                 Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.of("Asia/Kolkata")).toLocalDate());
     }
+    @Override
+    public List<Stock> getAvailableStockByDoctorLocation(String doctorEmail) {
+        Optional<CurrentAppointment> optionalAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(doctorEmail);
+    
+        if (optionalAppointment.isEmpty() || optionalAppointment.get().getDoctor() == null ||
+            optionalAppointment.get().getDoctor().getLocation() == null) {
+            throw new IllegalArgumentException("Doctor is not checked in or no valid location assigned.");
+        }
+    
+        Location location = optionalAppointment.get().getDoctor().getLocation();
+    
+        return stockRepository.findByQuantityGreaterThanAndLocationAndExpirationDateAfter(
+                0L,
+                location,
+                Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.of("Asia/Kolkata")).toLocalDate());
+    }
+    
 }
