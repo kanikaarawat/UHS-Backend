@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
@@ -25,7 +27,12 @@ public interface CurrentAppointmentRepository extends JpaRepository<CurrentAppoi
     int countByAppointmentNotNull();
     List<CurrentAppointment> findAllByAppointmentNotNullAndDoctorNotNullAndAppointment_Location(Location location);
     Optional<CurrentAppointment> findTopByAppointment_DateOrderByAppointment_TokenNoDesc(LocalDate date);
-    
-    // New method
     Optional<CurrentAppointment> findByDoctorIsNotNull();
+        @Query("SELECT ca FROM CurrentAppointment ca WHERE ca.doctor IS NOT NULL AND ca.appointment.location.locId = :locationId")
+    Optional<CurrentAppointment> findCurrentByLocationId(@Param("locationId") Long locationId);
+
+    @Query("SELECT ca FROM CurrentAppointment ca WHERE ca.doctor IS NOT NULL AND ca.appointment.location.locId = :locationId")
+    Optional<CurrentAppointment> findCurrentDetailsByLocationId(@Param("locationId") Long locationId);
+
+
 }

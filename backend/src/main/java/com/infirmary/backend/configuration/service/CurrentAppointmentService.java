@@ -7,13 +7,11 @@ import com.infirmary.backend.configuration.dto.CurrentAppointmentDTO;
 
 import java.util.UUID;
 
-import org.springframework.stereotype.Service;
-
-@Service
 public interface CurrentAppointmentService {
     CurrentAppointmentDTO getCurrentAppointmentById(UUID currentAppointmentId);
-    AppointmentResDTO getAppointmentStatusDoctorStatus(UUID currentAppointmentId);
+    AppointmentResDTO getAppointmentStatusDoctorStatus(UUID currentAppointmentId) throws CurrentAppointmentNotFoundException;
     CurrentAppointmentDTO getCurrAppByDoctorId(String docEmail) throws CurrentAppointmentNotFoundException, DoctorNotFoundException;
-    CurrentAppointmentDTO getCurrentAppointmentDetails();
-    String getCurrentTokenNumber();
+    CurrentAppointmentDTO getCurrentAppointmentDetails(Long locationId);
+    String getCurrentTokenNumber(Long locationId);
+
 }

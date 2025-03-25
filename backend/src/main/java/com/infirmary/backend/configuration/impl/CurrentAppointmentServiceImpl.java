@@ -26,7 +26,7 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
     private final MessageConfigUtil messageConfigUtil;
 
     public CurrentAppointmentServiceImpl(CurrentAppointmentRepository currentAppointmentRepository, 
-                                      MessageConfigUtil messageConfigUtil) {
+                                       MessageConfigUtil messageConfigUtil) {
         this.currentAppointmentRepository = currentAppointmentRepository;
         this.messageConfigUtil = messageConfigUtil;
     }
@@ -72,25 +72,25 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
     }
 
     @Override
-    public CurrentAppointmentDTO getCurrentAppointmentDetails() {
-        Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findByDoctorIsNotNull();
+    public CurrentAppointmentDTO getCurrentAppointmentDetails(Long locationId) {
+        Optional<CurrentAppointment> currentAppointment = 
+            currentAppointmentRepository.findCurrentDetailsByLocationId(locationId);
         return currentAppointment.map(CurrentAppointmentDTO::new).orElse(null);
     }
 
     @Override
-    public String getCurrentTokenNumber() {
-        Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findByDoctorIsNotNull();
+    public String getCurrentTokenNumber(Long locationId) {
+        Optional<CurrentAppointment> currentAppointment = 
+            currentAppointmentRepository.findCurrentByLocationId(locationId);
 
-        if (currentAppointment.isEmpty()) {
-            log.warn("No doctor has an assigned appointment currently");
-            return "N/A";
-        }
-        
-        if (currentAppointment.get().getAppointment() == null) {
-            log.warn("Found current appointment but no linked appointment");
+        if (currentAppointment.isEmpty() || currentAppointment.get().getAppointment() == null) {
+            log.warn("No current appointment found for location {}", locationId);
             return "N/A";
         }
         
         return String.valueOf(currentAppointment.get().getAppointment().getTokenNo());
     }
+
+    
+
 }
