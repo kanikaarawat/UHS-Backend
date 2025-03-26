@@ -152,5 +152,13 @@ public class PatientController {
     return ResponseEntity.ok(activeMeds);
 }
 
+@GetMapping("/lastPrescriptionDate")
+@PreAuthorize("hasRole('ROLE_PATIENT')")
+public ResponseEntity<?> getLastPrescriptionDate() {
+    return patientService.getLastPrescriptionDate(getTokenClaims());
+}
+
+
+
     
 }

@@ -275,4 +275,15 @@ public class PatientServiceImpl implements PatientService {
         return ResponseEntity.ok(resp);
     }
     
+    @Override
+public ResponseEntity<?> getLastPrescriptionDate(String sapEmail) {
+    List<Appointment> appointments = appointmentRepository.findByPatient_Email(sapEmail);
+    // filter only those that have a prescription and are completed
+    return appointments.stream()
+        .filter(a -> a.getPrescription() != null && a.getPrescription().getSubmittedAt() != null)
+        .max(Comparator.comparing(a -> a.getPrescription().getSubmittedAt()))
+        .map(a -> ResponseEntity.ok(a.getPrescription().getSubmittedAt()))
+        .orElse(ResponseEntity.ok(null));
+}
+
 }

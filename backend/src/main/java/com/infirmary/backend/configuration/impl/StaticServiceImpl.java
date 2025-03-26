@@ -1,11 +1,9 @@
 package com.infirmary.backend.configuration.impl;
 
-import java.io.InputStream;
 import java.io.IOException;
+import org.springframework.util.StreamUtils;
 
-import org.apache.commons.io.IOUtils;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.infirmary.backend.configuration.service.StaticService;
@@ -19,16 +17,18 @@ public class StaticServiceImpl implements StaticService {
     @Override
     public byte[] imageReturn(String filename) {
         try {
-            // Loads the image file from src/main/resources/static/Profile
-            ClassPathResource imgFile = new ClassPathResource("static/Profile/" + filename);
-            InputStream inputStream = imgFile.getInputStream();
-
-            // Convert input stream to byte array for response
-            return IOUtils.toByteArray(inputStream);
-
+            // normalize: replace all dots (except the last one) with underscores
+            int lastDotIndex = filename.lastIndexOf('.');
+            String namePart = filename.substring(0, lastDotIndex).replace(".", "_");
+            String ext = filename.substring(lastDotIndex); // .jpeg or .png
+            String safeFilename = namePart + ext;
+    
+            ClassPathResource imgFile = new ClassPathResource("static/Profile/" + safeFilename);
+            return StreamUtils.copyToByteArray(imgFile.getInputStream());
+    
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new ResourceNotFoundException("Image Not Found");
+            throw new RuntimeException("Image not found: " + filename);
         }
     }
+    
 }

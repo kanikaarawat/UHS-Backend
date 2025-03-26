@@ -96,4 +96,7 @@ public interface PatientService {
      * @return Total number of patients in the system
      */
     long getTotalPatientCount();
+
+    ResponseEntity<?> getLastPrescriptionDate(String sapEmail);
+
 }
