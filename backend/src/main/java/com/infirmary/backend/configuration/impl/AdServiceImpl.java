@@ -363,12 +363,14 @@ DeletedAppointment deletedAppointment = DeletedAppointment.builder()
 
         for(CurrentAppointment currentAppointment:currAppointments){
             Map<String,String> resp = new HashMap<>();
-            resp.put("doctorName", currentAppointment.getDoctor().getName());
-            resp.put("tokenNum", currentAppointment.getAppointment().getTokenNo().toString());
+            resp.put("PatientToken", currentAppointment.getAppointment().getTokenNo().toString());
+            resp.put("PatientName", currentAppointment.getPatient().getName());
             resp.put("name", currentAppointment.getPatient().getName());
             resp.put("sapEmail", currentAppointment.getPatient().getEmail());
             resp.put("reason", currentAppointment.getAppointment().getAptForm() != null ? currentAppointment.getAppointment().getAptForm().getReason() : "-");
             resp.put("aptId", currentAppointment.getAppointment().getAppointmentId().toString());
+            resp.put("doctorName", currentAppointment.getDoctor().getName());
+
 
 
             responseOut.add(resp);
