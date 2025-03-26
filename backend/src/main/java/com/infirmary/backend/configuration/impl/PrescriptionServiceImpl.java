@@ -22,6 +22,7 @@ import com.infirmary.backend.configuration.service.PrescriptionService;
 import com.infirmary.backend.shared.utility.AppointmentQueueManager;
 
 import lombok.extern.slf4j.Slf4j;
+import java.sql.Timestamp;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -120,7 +121,7 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             if (currMed.getExpirationDate().isBefore(Instant.ofEpochMilli(System.currentTimeMillis())
                     .atZone(ZoneId.of("Asia/Kolkata")).toLocalDate()))
                 throw new IllegalArgumentException("Medicines expired");
-
+            prescription.setSubmittedAt(new Timestamp(System.currentTimeMillis()));
             medicine.setMedicine(currMed);
             medicine.setSuggestion(pres.getSuggestion());
             prescription.addPresMed(medicine);

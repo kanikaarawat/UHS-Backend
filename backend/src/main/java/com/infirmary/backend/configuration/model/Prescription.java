@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import java.sql.Timestamp;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +41,9 @@ public class Prescription implements Serializable {
 
     @Column(name = "test_needed")
     private String testNeeded;
+
+    @Column(name = "submitted_at")
+    private Timestamp submittedAt;    
 
     @OneToMany(mappedBy = "prescription",cascade = CascadeType.ALL,orphanRemoval = false)
     private List<PrescriptionMeds> medicine = new ArrayList<>();
