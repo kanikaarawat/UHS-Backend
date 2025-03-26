@@ -98,6 +98,8 @@ public class AdServiceImpl implements ADService{
             dataMap.put("reason", apt.getAptForm().getReason());
             dataMap.put("aptId", apt.getAppointmentId().toString());
             dataMap.put("Id",apt.getPatient().getSapId());
+            dataMap.put("tokenNum", apt.getTokenNo() != null ? apt.getTokenNo().toString() : "-");
+
             resp.add(dataMap);
         }
 
@@ -357,9 +359,13 @@ DeletedAppointment deletedAppointment = DeletedAppointment.builder()
 
         for(CurrentAppointment currentAppointment:currAppointments){
             Map<String,String> resp = new HashMap<>();
-            resp.put("doctorName",currentAppointment.getDoctor().getName());
-            resp.put("PatientToken", currentAppointment.getAppointment().getTokenNo().toString());
-            resp.put("PatientName", currentAppointment.getPatient().getName());
+            resp.put("doctorName", currentAppointment.getDoctor().getName());
+resp.put("PatientToken", currentAppointment.getAppointment().getTokenNo().toString());
+resp.put("PatientName", currentAppointment.getPatient().getName());
+resp.put("sapEmail", currentAppointment.getPatient().getEmail());
+resp.put("reason", currentAppointment.getAppointment().getAptForm() != null ? currentAppointment.getAppointment().getAptForm().getReason() : "-");
+resp.put("aptId", currentAppointment.getAppointment().getAppointmentId().toString());
+
             responseOut.add(resp);
         }
 
