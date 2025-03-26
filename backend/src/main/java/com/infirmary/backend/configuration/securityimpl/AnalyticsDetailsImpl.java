@@ -34,16 +34,16 @@ public class AnalyticsDetailsImpl implements UserDetailsService{
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException ,RolesNotFound,ResourceNotFoundException {
-        for(UserDetailsService usrServ:usrList){
-            try{
-                UserDetails currUser = usrServ.loadUserByUsername(username);
-                return currUser;
-            }catch(UsernameNotFoundException err){
-                continue;
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        for (UserDetailsService usrServ : usrList) {
+            try {
+                return usrServ.loadUserByUsername(username);
+            } catch (UsernameNotFoundException | ResourceNotFoundException ignored) {
+                // try the next one
             }
         }
-        throw new ResourceNotFoundException("No User Found");
+        throw new UsernameNotFoundException("No user found with username: " + username);
     }
+    
     
 }

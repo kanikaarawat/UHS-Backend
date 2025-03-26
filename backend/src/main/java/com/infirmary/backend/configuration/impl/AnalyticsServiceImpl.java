@@ -8,8 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
 
 import com.infirmary.backend.configuration.model.Doctor;
 import com.infirmary.backend.configuration.repository.AppointmentRepository;
@@ -30,9 +33,34 @@ public class AnalyticsServiceImpl implements AnalyticsService{
     
     @Override
     public Long getAllPatient() {
-        return appointmentRepository.countDistinctPatients();
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null) {
+                log.error("Authentication object is null.");
+                throw new RuntimeException("Unauthorized access.");
+            }
+    
+            String username = auth.getName();
+            log.info("Authenticated user trying to access getAllPatient(): {}", username);
+    
+            Optional<Doctor> doctorOpt = doctorRepository.findByDoctorEmail(username);
+            log.info("Doctor lookup for email {} returned present? {}", username, doctorOpt.isPresent());
+    
+            if (doctorOpt.isPresent()) {
+                UUID doctorId = doctorOpt.get().getDoctorId();
+                LocalDate lastDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).minusDays(30);
+                return appointmentRepository.countAppointmentsForDoctor(doctorId, lastDate);
+            }
+    
+            // Not a doctor, assume admin
+            return appointmentRepository.countDistinctPatients();
+    
+        } catch (Exception e) {
+            log.error("Error in getAllPatient()", e);
+            throw new RuntimeException("Error while retrieving total patient count.");
+        }
     }
-
+    
     @Override
     public List<Object[]> getPatientSchoolWise() {
         LocalDate lasDate = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.of("Asia/Kolkata")).toLocalDate();

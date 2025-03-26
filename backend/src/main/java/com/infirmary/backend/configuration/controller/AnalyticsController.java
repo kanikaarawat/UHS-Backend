@@ -19,7 +19,7 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
 
     @PreAuthorize("hasRole('ROLE_AD') or hasRole('ROLE_DOCTOR')")
-    @GetMapping(value = "/geTotalPatient")
+    @GetMapping(value = "/getTotalPatient")
     public ResponseEntity<?> getTotalPatientCount(){
         return createSuccessResponse(analyticsService.getAllPatient());
     }

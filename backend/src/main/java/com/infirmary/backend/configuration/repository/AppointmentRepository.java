@@ -85,5 +85,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     @Query("SELECT a FROM Appointment a WHERE a.doctor IS NULL AND a.prescription IS NULL")
     List<Appointment> findAllPendingAppointments();
 
+    @Query("SELECT COUNT(DISTINCT a.patient.id) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.date >= :afterDate")
+    Long countAppointmentsForDoctor(@Param("doctorId") UUID doctorId, @Param("afterDate") LocalDate afterDate);
 
 }
