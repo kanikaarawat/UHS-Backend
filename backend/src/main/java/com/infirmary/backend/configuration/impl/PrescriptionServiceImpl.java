@@ -86,11 +86,16 @@ public class PrescriptionServiceImpl implements PrescriptionService {
                 .findByDoctor_DoctorEmail(sapEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("No Appointment Scheduled"));
 
-        Prescription prescription = new Prescription();
 
         // Check Meds
         Map<UUID, Integer> instance = new HashMap<>();
 
+        // Set Medicine
+        Prescription prescription = new Prescription();
+
+        // ✅ Set submitted_at timestamp outside the loop
+        prescription.setSubmittedAt(new Timestamp(System.currentTimeMillis()));
+        
         // Set Medicine
         for (PrescriptionMedsDTO pres : prescriptionDTO.getMeds()) {
             PrescriptionMeds medicine = new PrescriptionMeds();
@@ -98,35 +103,33 @@ public class PrescriptionServiceImpl implements PrescriptionService {
             medicine.setDosageEvening(pres.getDosageEvening());
             medicine.setDosageMorning(pres.getDosageMorning());
             medicine.setDuration(pres.getDuration());
-
-            if (instance.get(pres.getMedicine()) != null)
-                instance.put(pres.getMedicine(), instance.get(pres.getMedicine()) + 1);
-            else
-                instance.put(pres.getMedicine(), 1);
-
+        
+            // Check duplicates
+            instance.put(pres.getMedicine(), instance.getOrDefault(pres.getMedicine(), 0) + 1);
+        
             if (pres.getDuration() < 1)
                 throw new IllegalArgumentException("Duration Should be at least 1");
-
+        
             Float medQty = pres.getDosageAfternoon() + pres.getDosageMorning() + pres.getDosageEvening();
-
+        
             if (!(medQty > 0))
                 throw new IllegalArgumentException("No medicine quantity defined");
-
+        
             Stock currMed = stockRepository.findById(pres.getMedicine())
                     .orElseThrow(() -> new ResourceNotFoundException("No Such Medicine"));
-
+        
             if (currMed.getQuantity() < (medQty * pres.getDuration()))
                 throw new IllegalArgumentException("Not enough Stock available");
-
+        
             if (currMed.getExpirationDate().isBefore(Instant.ofEpochMilli(System.currentTimeMillis())
                     .atZone(ZoneId.of("Asia/Kolkata")).toLocalDate()))
                 throw new IllegalArgumentException("Medicines expired");
-            prescription.setSubmittedAt(new Timestamp(System.currentTimeMillis()));
+        
             medicine.setMedicine(currMed);
             medicine.setSuggestion(pres.getSuggestion());
             prescription.addPresMed(medicine);
         }
-
+        
         // Check for duplicates
         for (UUID inst : instance.keySet()) {
             if (instance.get(inst) > 1)
@@ -183,11 +186,16 @@ public class PrescriptionServiceImpl implements PrescriptionService {
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-
-        Date date = new Date(appointment.getTimestamp());
-
-        prescriptionRes.setTime(simpleDateFormat.format(date));
-
+        
+        Timestamp submittedAt = appointment.getPrescription().getSubmittedAt(); // use submitted time!
+        if (submittedAt == null) {
+            throw new ResourceNotFoundException("Prescription submission time not found");
+        }
+        
+        Date submissionDate = new Date(submittedAt.getTime());
+        
+        prescriptionRes.setTime(simpleDateFormat.format(submissionDate));
+        
         prescriptionRes.setResidenceType(
                 medicalDetailsRepository.findByPatient_Email(appointment.getPatient().getEmail())
                         .orElseThrow(() -> new ResourceNotFoundException("no Medical Details Found"))
