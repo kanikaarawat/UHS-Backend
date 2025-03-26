@@ -250,44 +250,71 @@ public class StockServiceImpl implements StockService {
         }
     }    
 
+    @Override
     public byte[] exportStocksToExcel() throws IOException {
-        List<Stock> stocks = stockRepository.findAll();
-
+        List<Stock> allStocks = stockRepository.findAll();
+    
+        List<Stock> activeStocks = allStocks.stream()
+                .filter(stock -> stock.getQuantity() > 0)
+                .toList();
+    
+        List<Stock> deletedStocks = allStocks.stream()
+                .filter(stock -> stock.getQuantity() == 0)
+                .toList();
+    
         try (Workbook workbook = new XSSFWorkbook();
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+    
             Sheet sheet = workbook.createSheet("Medicine Stocks");
-
+    
+            // Add header row
             Row headerRow = sheet.createRow(0);
-            String[] columns = { "Batch Number", "Medicine Name", "Composition", "Quantity", "Medicine Type",
-                    "Expiration Date", "Company", "Location" };
+            String[] columns = {
+                    "Batch Number", "Medicine Name", "Composition", "Quantity",
+                    "Medicine Type", "Expiration Date", "Company", "Location", "Status"
+            };
+    
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
             }
-
+    
             int rowNum = 1;
-            for (Stock stock : stocks) {
+    
+            // Write active stocks
+            for (Stock stock : activeStocks) {
                 Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(stock.getBatchNumber());
-                row.createCell(1).setCellValue(stock.getMedicineName());
-                row.createCell(2).setCellValue(stock.getComposition());
-                row.createCell(3).setCellValue(stock.getQuantity());
-                row.createCell(4).setCellValue(stock.getMedicineType());
-                row.createCell(5).setCellValue(stock.getExpirationDate().toString());
-                row.createCell(6).setCellValue(stock.getCompany());
-                row.createCell(7).setCellValue(stock.getLocation().getLocationName());
+                populateStockRow(row, stock, "Active");
             }
-
+    
+            // Write deleted stocks
+            for (Stock stock : deletedStocks) {
+                Row row = sheet.createRow(rowNum++);
+                populateStockRow(row, stock, "Deleted");
+            }
+    
+            // Autosize columns
             for (int i = 0; i < columns.length; i++) {
                 sheet.autoSizeColumn(i);
             }
-
+    
             workbook.write(out);
             return out.toByteArray();
         }
     }
-
+    
+    private void populateStockRow(Row row, Stock stock, String status) {
+        row.createCell(0).setCellValue(stock.getBatchNumber());
+        row.createCell(1).setCellValue(stock.getMedicineName());
+        row.createCell(2).setCellValue(stock.getComposition());
+        row.createCell(3).setCellValue(stock.getQuantity());
+        row.createCell(4).setCellValue(stock.getMedicineType());
+        row.createCell(5).setCellValue(stock.getExpirationDate().toString());
+        row.createCell(6).setCellValue(stock.getCompany());
+        row.createCell(7).setCellValue(stock.getLocation().getLocationName());
+        row.createCell(8).setCellValue(status);
+    }
+    
     @Override
     public List<Stock> getAllStocks() {
         return stockRepository.findByQuantityGreaterThan(0L);
