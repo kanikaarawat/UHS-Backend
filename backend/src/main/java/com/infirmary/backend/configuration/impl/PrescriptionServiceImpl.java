@@ -296,7 +296,7 @@ private String capitalizeWords(String input) {
 
                 Float totalDosage = meds.getDosageMorning() + meds.getDosageAfternoon() + meds.getDosageEvening();
                 dto.setDosage(totalDosage.toString());
-
+                dto.setPres_medicine_id(meds.getPresMedicineId()); // Or getId() or appropriate method
                 dto.setDuration(meds.getDuration());
                 dto.setAppointmentDate(startDate.toString());
                 dto.setEndDate(endDate.toString());
