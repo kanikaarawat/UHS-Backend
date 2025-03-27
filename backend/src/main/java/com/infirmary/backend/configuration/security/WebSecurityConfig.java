@@ -228,7 +228,7 @@ public class WebSecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://uhs.vercel.app"));
+        configuration.setAllowedOrigins(List.of("https://uhs.vercel.app", "http://localhost:5173/"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
         configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
         configuration.setExposedHeaders(List.of("Authorization"));
