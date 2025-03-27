@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.ProviderNotFoundException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,6 +33,9 @@ import com.infirmary.backend.configuration.securityimpl.AdminDetailsImpl;
 import com.infirmary.backend.configuration.securityimpl.AnalyticsDetailsImpl;
 import com.infirmary.backend.configuration.securityimpl.DoctorDetailsImpl;
 import com.infirmary.backend.configuration.securityimpl.PatientDetailsImpl;
+import com.infirmary.backend.configuration.filter.RateLimitingFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -86,7 +90,6 @@ public class WebSecurityConfig {
         );
 
         return authentication -> {
-            // Get the current request from the SecurityContextHolder
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes == null) {
                 throw new AuthenticationServiceException("Unable to determine request");
@@ -95,7 +98,6 @@ public class WebSecurityConfig {
             HttpServletRequest request = attributes.getRequest();
             String requestURI = request.getRequestURI();
 
-            // Select the appropriate provider based on the request URI
             AuthenticationProvider selectedProvider = null;
             if ((requestURI.startsWith("/api/patient/")) || (requestURI.startsWith("/api/auth/patient/"))) {
                 selectedProvider = providers.stream().toList().get(0);
@@ -108,29 +110,33 @@ public class WebSecurityConfig {
             }else if (requestURI.startsWith("/api/analytics/")) {
                 selectedProvider = providers.stream().toList().get(4);
             }
-            // If no matching provider is found, throw an exception
             if (selectedProvider == null) {
                 throw new ProviderNotFoundException("No authentication provider found for the request");
             }
 
-            // Authenticate using the selected provider
             return selectedProvider.authenticate(authentication);
         };
     }
 
     @Order(1)
     @Bean
-     public SecurityFilterChain globalSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.headers(headers -> headers
+    public SecurityFilterChain globalSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .headers(headers -> headers
                 .xssProtection(xss -> xss.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'"))
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none';"))
+                .frameOptions(frame -> frame.deny())
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000))
+                .contentTypeOptions(Customizer.withDefaults())
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable());
-    
+        http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
+
         return http.build();
     }
-
 
     @Order(2)
     @Bean
@@ -138,20 +144,20 @@ public class WebSecurityConfig {
         http
             .securityMatcher("/api/doctor/**", "/api/auth/doctor/**")
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/doctor/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(authenticatioTokenFilterPatient(), UsernamePasswordAuthenticationFilter.class);
 
-            return http.build();
+        return http.build();
     }
 
     @Order(3)
     @Bean
     public SecurityFilterChain AdSecurityFilterChain(HttpSecurity http) throws Exception {
-         http
+        http
             .securityMatcher("/api/AD/**", "/api/auth/ad/**")
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -171,7 +177,7 @@ public class WebSecurityConfig {
             .securityMatcher("/api/admin/**", "/api/auth/admin/**")
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-             .authorizeHttpRequests(auth -> auth
+            .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/admin/**").permitAll()
                 .anyRequest().authenticated()
             )
@@ -179,7 +185,6 @@ public class WebSecurityConfig {
 
         return http.build();
     }
-
 
     @Order(5)
     @Bean
@@ -190,8 +195,7 @@ public class WebSecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/patient/**").permitAll()
-               .requestMatchers(HttpMethod.GET, "/api/patient/count").hasRole("ADMIN")
-                
+                .requestMatchers(HttpMethod.GET, "/api/patient/count").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(authenticatioTokenFilterPatient(), UsernamePasswordAuthenticationFilter.class);
@@ -205,28 +209,43 @@ public class WebSecurityConfig {
         http
             .securityMatcher("/api/analytics/**")
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated()
-            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
             .addFilterBefore(authenticatioTokenFilterPatient(), UsernamePasswordAuthenticationFilter.class);
 
-            return http.build();
+        return http.build();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/api/location/*").permitAll().requestMatchers("/Profile/*").permitAll().anyRequest().denyAll());
+        http.authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/location/*").permitAll()
+            .requestMatchers("/Profile/*").permitAll()
+            .anyRequest().denyAll());
         return http.build();
     }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin(CorsConfiguration.ALL);
-        configuration.setAllowedMethods(Arrays.asList(CorsConfiguration.ALL));
-        configuration.setAllowedHeaders(Arrays.asList(CorsConfiguration.ALL));
+        configuration.setAllowedOrigins(List.of("https://uhs.vercel.app"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+    @Bean
+public FilterRegistrationBean<RateLimitingFilter> rateLimitingFilter() {
+    FilterRegistrationBean<RateLimitingFilter> registrationBean = new FilterRegistrationBean<>();
+    registrationBean.setFilter(new RateLimitingFilter());
+    registrationBean.addUrlPatterns("/api/auth/*"); // Apply to login endpoints
+    registrationBean.setOrder(1);
+    return registrationBean;
+}
+
 }
