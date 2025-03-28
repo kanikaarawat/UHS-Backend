@@ -14,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AppointmentReqDTO {
 
-    @NotBlank(message = "Please provide the patient's email")
+    // @NotBlank(message = "Please provide the patient's email")
     @Email(message = "Invalid email format")
     private String email;
 

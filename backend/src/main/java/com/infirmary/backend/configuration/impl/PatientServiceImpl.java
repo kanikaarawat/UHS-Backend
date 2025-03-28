@@ -134,7 +134,8 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     public ResponseEntity<?> submitAppointment(String sapEmail, AppointmentReqDTO appointmentReqDTO, Double latitude, Double longitude) throws UsernameNotFoundException {
-        
+        appointmentReqDTO.setEmail(sapEmail);
+
         Optional<CurrentAppointment> appointmentForm = currentAppointmentRepository.findByPatient_Email(sapEmail);
         CurrentAppointment currentAppointment = new CurrentAppointment();
         Optional<Patient> patient = patientRepository.findByEmail(sapEmail);
