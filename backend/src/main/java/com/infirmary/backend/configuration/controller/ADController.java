@@ -13,6 +13,8 @@ import com.infirmary.backend.configuration.service.ADService;
 import com.infirmary.backend.configuration.service.DoctorService;
 import com.infirmary.backend.configuration.service.PrescriptionService;
 import com.infirmary.backend.configuration.service.StockService;
+import com.infirmary.backend.configuration.dto.AppointmentReqDTO;
+import com.infirmary.backend.configuration.service.AppointmentService;
 
 import jakarta.validation.Valid;
 
@@ -52,14 +54,16 @@ public class ADController {
     private final ADService adService;
     private final PrescriptionService prescriptionService;
     private final StockService stockService;
+    private final AppointmentService appointmentService;
 
-    public ADController(ADService adService, DoctorService doctorService, PrescriptionService prescriptionService, StockService stockService){
+    public ADController(ADService adService, DoctorService doctorService, PrescriptionService prescriptionService, StockService stockService, AppointmentService appointmentService){
         this.adService = adService;
         this.prescriptionService = prescriptionService;
         this.doctorService = doctorService;
         this.stockService = stockService;
+        this.appointmentService = appointmentService;
     }
-
+    
     private static String getTokenClaims(){
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String id = userDetails.getUsername();
@@ -157,7 +161,12 @@ public class ADController {
     public ResponseEntity<?> submitAppointment(@Valid @RequestBody AdSubmitReqDTO adSubmitReqDTO){
         return ResponseEntity.ok(adService.submitAppointment(adSubmitReqDTO));
     }
-
+    @PreAuthorize("hasRole('ROLE_AD')")
+    @PostMapping(value = "/manual/submitAppointment")
+    public ResponseEntity<?> manualSubmitAppointment(@Valid @RequestBody AppointmentReqDTO req) {
+        return appointmentService.manualSubmitAppointment(req, getTokenClaims());
+    }
+    
     @PreAuthorize("hasRole('ROLE_AD')")
     @PostMapping(value = "/submit/adHoc")
     public ResponseEntity<?> submitAdHocAppointment(@Valid @RequestBody AdHocSubmitDTO adHocSubmitDTO){

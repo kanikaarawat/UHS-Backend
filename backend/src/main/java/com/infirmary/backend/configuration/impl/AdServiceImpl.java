@@ -264,7 +264,7 @@ DeletedAppointment deletedAppointment = DeletedAppointment.builder()
         Optional<CurrentAppointment> currentAppointment = currentAppointmentRepository.findByDoctor(doc);
 
         if(currentAppointment.isPresent()){
-            throw new IllegalArgumentException("an Appointment is Assigned");
+            throw new IllegalArgumentException("An Appointment is already Assigned");
         }
 
         if(docStat){
