@@ -113,4 +113,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
 
     @Query("SELECT COALESCE(MAX(a.tokenNo), 0) FROM Appointment a WHERE a.date = :date AND a.location.id = :locationId")
     Integer findMaxTokenNoForDateAndLocation(@Param("date") LocalDate date, @Param("locationId") Long locationId);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.createdAt >= CURRENT_DATE")
+    int countTodayAppointments();
+    
+    long countByStatus(String status);
+
 }

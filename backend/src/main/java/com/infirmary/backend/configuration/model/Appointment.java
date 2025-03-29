@@ -8,7 +8,9 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Getter
@@ -58,6 +60,14 @@ public class Appointment implements Serializable {
 
     @Column(name = "timestamp")
     private long timestamp;
+
+    @Column(name = "status") // Ensure column exists or is created
+private String status;
+
+@CreationTimestamp
+@Column(name = "created_at", updatable = false)
+private LocalDateTime createdAt;
+
 
     public Appointment(AppointmentDTO appointmentDTO) {
         if (appointmentDTO.getPatientDTO() != null) {

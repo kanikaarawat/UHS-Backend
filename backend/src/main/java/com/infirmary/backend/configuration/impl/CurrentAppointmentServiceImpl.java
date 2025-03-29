@@ -15,8 +15,9 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
+
 
 @Service
 @Slf4j
@@ -72,25 +73,30 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
     }
 
     @Override
-    public CurrentAppointmentDTO getCurrentAppointmentDetails(Long locationId) {
-        Optional<CurrentAppointment> currentAppointment = 
-            currentAppointmentRepository.findCurrentDetailsByLocationId(locationId);
-        return currentAppointment.map(CurrentAppointmentDTO::new).orElse(null);
-    }
-
-    @Override
     public String getCurrentTokenNumber(Long locationId) {
-        Optional<CurrentAppointment> currentAppointment = 
+        List<CurrentAppointment> currentAppointments =
             currentAppointmentRepository.findCurrentByLocationId(locationId);
-
-        if (currentAppointment.isEmpty() || currentAppointment.get().getAppointment() == null) {
+    
+        if (currentAppointments == null || currentAppointments.isEmpty()) {
             log.warn("No current appointment found for location {}", locationId);
             return "N/A";
         }
-        
-        return String.valueOf(currentAppointment.get().getAppointment().getTokenNo());
+    
+        return currentAppointments.stream()
+            .map(CurrentAppointment::getAppointment)
+            .filter(Objects::nonNull)
+            .map(app -> app.getTokenNo())
+            .filter(Objects::nonNull)
+            .max(Integer::compareTo)
+            .map(String::valueOf)
+            .orElse("N/A");
     }
 
+    @Override
+    public CurrentAppointmentDTO getCurrentAppointmentDetails(Long locationId) {
+        throw new UnsupportedOperationException("Unimplemented method 'getCurrentAppointmentDetails'");
+    }
+    
     
 
 }

@@ -29,7 +29,7 @@ public interface CurrentAppointmentRepository extends JpaRepository<CurrentAppoi
     Optional<CurrentAppointment> findTopByAppointment_DateOrderByAppointment_TokenNoDesc(LocalDate date);
     Optional<CurrentAppointment> findByDoctorIsNotNull();
         @Query("SELECT ca FROM CurrentAppointment ca WHERE ca.doctor IS NOT NULL AND ca.appointment.location.locId = :locationId")
-    Optional<CurrentAppointment> findCurrentByLocationId(@Param("locationId") Long locationId);
+    List<CurrentAppointment> findCurrentByLocationId(@Param("locationId") Long locationId);
 
     @Query("SELECT ca FROM CurrentAppointment ca WHERE ca.doctor IS NOT NULL AND ca.appointment.location.locId = :locationId")
     Optional<CurrentAppointment> findCurrentDetailsByLocationId(@Param("locationId") Long locationId);
