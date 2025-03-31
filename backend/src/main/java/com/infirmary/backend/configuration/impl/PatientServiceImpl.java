@@ -16,6 +16,7 @@ import com.infirmary.backend.configuration.model.Doctor;
 import com.infirmary.backend.configuration.model.Location;
 import com.infirmary.backend.configuration.model.MedicalDetails;
 import com.infirmary.backend.configuration.model.Patient;
+import com.infirmary.backend.configuration.model.Prescription;
 import com.infirmary.backend.configuration.repository.AppointmentFormRepository;
 import com.infirmary.backend.configuration.repository.AppointmentRepository;
 import com.infirmary.backend.configuration.repository.CurrentAppointmentRepository;
@@ -249,32 +250,40 @@ public class PatientServiceImpl implements PatientService {
 
         return ResponseEntity.ok(prescriptionRes);
     }
+@Override
+public ResponseEntity<?> getAppointment(String sapEmail) {
+    sapEmail = sapEmail.substring(0, sapEmail.indexOf("@"))
+               .concat(sapEmail.substring(sapEmail.indexOf("@")).replaceAll(",", "."));
 
-    @Override
-    public ResponseEntity<?> getAppointment(String sapEmail) {
-        sapEmail = sapEmail.substring(0,sapEmail.indexOf("@")).concat(sapEmail.substring(sapEmail.indexOf("@")).replaceAll(",", "."));
+    Patient patient = patientRepository.findByEmail(sapEmail)
+                        .orElseThrow(() -> new ResourceNotFoundException("No Patient Found"));
 
-        Patient patient = patientRepository.findByEmail(sapEmail).orElseThrow(()-> new ResourceNotFoundException("No Patient Found"));
+    List<Appointment> aptList = appointmentRepository
+        .findAllByPatientAndPrescriptionNotNull(patient)
+        .stream()
+        .filter(apt -> !(AppointmentQueueManager.getAppointedQueue().contains(apt.getAppointmentId())))
+        .toList();
 
-        List<Appointment> aptList =  appointmentRepository.findAllByPatientAndPrescriptionNotNull(patient).stream().filter(apt -> !(AppointmentQueueManager.getAppointedQueue().contains(apt.getAppointmentId()))).toList();
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
+    simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
+    List<Map<String, String>> resp = new ArrayList<>();
 
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+    for (Appointment curApt : aptList) {
+        Prescription prescription = curApt.getPrescription();
+        if (prescription == null || prescription.getSubmittedAt() == null) continue;
 
-        List<Map<String,String>> resp = new ArrayList<>();
-
-        for(Appointment curApt : aptList){
-            Map<String,String> apt = new HashMap<>();
-            apt.put("appointmentId",curApt.getAppointmentId().toString());
-            apt.put("date",curApt.getDate().toString());
-            apt.put("token", curApt.getTokenNo().toString());
-            apt.put("time", simpleDateFormat.format(new Date(curApt.getTimestamp())));
-            resp.add(apt);
-        }
-
-        return ResponseEntity.ok(resp);
+        Map<String, String> apt = new HashMap<>();
+        apt.put("appointmentId", curApt.getAppointmentId().toString());
+        apt.put("date", curApt.getDate().toString());
+        apt.put("token", curApt.getTokenNo().toString());
+        apt.put("time", simpleDateFormat.format(prescription.getSubmittedAt())); // ← Using Prescription time
+        resp.add(apt);
     }
+
+    return ResponseEntity.ok(resp);
+}
+
     
     @Override
 public ResponseEntity<?> getLastPrescriptionDate(String sapEmail) {

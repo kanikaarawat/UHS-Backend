@@ -175,34 +175,36 @@ public class PrescriptionServiceImpl implements PrescriptionService {
     public ResponseEntity<?> getPrescription(UUID id) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No Appointment Scheduled"));
-
+    
         PrescriptionRes prescriptionRes = new PrescriptionRes();
-
-        appointment.getPatient().setPassword(""); // Hide password in response
-
+    
+        appointment.getPatient().setPassword(""); // Hide password
+    
         prescriptionRes.setPrescription(new PrescriptionDTO(appointment.getPrescription()));
-
         prescriptionRes.setDate(appointment.getDate());
-
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
+    
+        // Format prescription submission time
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm a");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-        
-        Timestamp submittedAt = appointment.getPrescription().getSubmittedAt(); // use submitted time!
+    
+        Timestamp submittedAt = appointment.getPrescription().getSubmittedAt();
         if (submittedAt == null) {
             throw new ResourceNotFoundException("Prescription submission time not found");
         }
-        
-        Date submissionDate = new Date(submittedAt.getTime());
-        
-        prescriptionRes.setTime(simpleDateFormat.format(submissionDate));
-        
+    
+        String formattedTime = simpleDateFormat.format(new Date(submittedAt.getTime()));
+        prescriptionRes.setTime(formattedTime);
+    
+        // Set residence type
         prescriptionRes.setResidenceType(
                 medicalDetailsRepository.findByPatient_Email(appointment.getPatient().getEmail())
-                        .orElseThrow(() -> new ResourceNotFoundException("no Medical Details Found"))
-                        .getResidenceType());
-
+                        .orElseThrow(() -> new ResourceNotFoundException("No Medical Details Found"))
+                        .getResidenceType()
+        );
+    
         return ResponseEntity.ok(prescriptionRes);
     }
+    
 
     @Override
 public Map<String, Integer> getDiagnosisFrequencies() {

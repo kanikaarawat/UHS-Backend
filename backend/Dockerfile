@@ -1,41 +1,34 @@
 # ---------- Stage 1: Build ----------
-    FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
-    # Set working directory
-    WORKDIR /opt/app
-    
-    # Install dos2unix (if needed)
-    RUN apt-get update && apt-get install -y dos2unix
-    
-    # Copy Maven wrapper and pom.xml first to leverage Docker cache
-    COPY .mvn/ .mvn
-    COPY mvnw pom.xml ./
-    
-    # Make mvnw executable and fix line endings
-    RUN chmod +x mvnw
-    RUN dos2unix mvnw 
-    
-    # Download all dependencies for offline build
-    RUN ./mvnw dependency:go-offline
-    
-    # Copy the source code
-    COPY src ./src
-    
-    # Package the application (skipping tests)
-    RUN ./mvnw clean package -DskipTests
-    
-    # ---------- Stage 2: Runtime ----------
-    FROM eclipse-temurin:17-jre-jammy
-    
-    # Set working directory
-    WORKDIR /opt/app
-    
-    # Expose port 8081 (as per your application)
-    EXPOSE 8081
-    
-    # Copy the JAR from builder stage
-    COPY --from=builder /opt/app/target/*.jar app.jar
-    
-    # Run the Spring Boot application
-    ENTRYPOINT ["java", "-jar", "app.jar"]
-    
+WORKDIR /opt/app
+
+RUN apt-get update && apt-get install -y dos2unix
+
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw
+RUN dos2unix mvnw
+
+RUN ./mvnw dependency:go-offline
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# ---------- Stage 2: Runtime ----------
+FROM eclipse-temurin:17-jre-jammy
+
+WORKDIR /opt/app
+EXPOSE 8081
+
+# ✅ Install PostgreSQL 16 client (includes pg_dump 16)
+RUN apt-get update && \
+    apt-get install -y wget gnupg2 lsb-release && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt-get update && \
+    apt-get install -y postgresql-client-16 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/app/target/*.jar app.jar
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
