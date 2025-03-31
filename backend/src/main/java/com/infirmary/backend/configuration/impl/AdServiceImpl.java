@@ -382,32 +382,40 @@ DeletedAppointment deletedAppointment = DeletedAppointment.builder()
 
     @Override
     public List<?> getAppointmentByDate(LocalDate date, String sapEmail) {
-        AD ad = adRepository.findByAdEmail(sapEmail).orElseThrow(()->new ResourceNotFoundException("No Such Ad exists"));
-
-        if(ad.getLocation() == null) throw new IllegalArgumentException("Must be present at Infirmary");
-
-        List<Appointment> allAppointments = appointmentRepository.findAllByDateAndLocationAndPrescriptionNotNull(date, ad.getLocation()).stream().filter(apt -> !(AppointmentQueueManager.getAppointedQueue().contains(apt.getAppointmentId()))).toList();
-
+        AD ad = adRepository.findByAdEmail(sapEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("No Such Ad exists"));
+    
+        if (ad.getLocation() == null)
+            throw new IllegalArgumentException("Must be present at Infirmary");
+    
+        List<Appointment> allAppointments = appointmentRepository
+            .findAllByDateAndLocationAndPrescriptionNotNull(date, ad.getLocation())
+            .stream()
+            .filter(apt -> !AppointmentQueueManager.getAppointedQueue().contains(apt.getAppointmentId()))
+            .toList();
+    
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
-
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-
-        List<Map<String,String>> resp = new ArrayList<>();
-
-        for(Appointment curApt : allAppointments){
-            Map<String,String> apt = new HashMap<>();
-            apt.put("appointmentId",curApt.getAppointmentId().toString());
-            apt.put("PatientName",curApt.getPatient().getName());
+    
+        List<Map<String, String>> resp = new ArrayList<>();
+    
+        for (Appointment curApt : allAppointments) {
+            Prescription prescription = curApt.getPrescription();
+            if (prescription == null || prescription.getSubmittedAt() == null) continue;
+    
+            Map<String, String> apt = new HashMap<>();
+            apt.put("appointmentId", curApt.getAppointmentId().toString());
+            apt.put("PatientName", curApt.getPatient().getName());
             apt.put("token", curApt.getTokenNo().toString());
             apt.put("date", curApt.getDate().toString());
-            apt.put("time", simpleDateFormat.format(new Date(curApt.getTimestamp())));
+            apt.put("time", simpleDateFormat.format(prescription.getSubmittedAt())); // 👈 from Prescription
             apt.put("location", curApt.getLocation().getLocationName());
             resp.add(apt);
         }
-
+    
         return resp;
     }
-
+    
 
     @Override
     public String submitAdHocAppointment(AdHocSubmitDTO adHocSubmitDTO, String adEmail) {
