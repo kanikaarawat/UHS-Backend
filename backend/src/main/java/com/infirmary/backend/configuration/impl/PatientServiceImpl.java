@@ -39,6 +39,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -225,7 +226,7 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public ResponseEntity<?> getPrescriptions(String sapEmail,UUID aptId) {
+    public ResponseEntity<?> getPrescriptions (String sapEmail,UUID aptId) {
 
         Appointment appointment = appointmentRepository.findById(aptId).orElseThrow(()-> new ResourceNotFoundException("No prescription Found"));
 
@@ -238,13 +239,16 @@ public class PatientServiceImpl implements PatientService {
 
         prescriptionRes.setDate(appointment.getDate());
 
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss");
-
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("hh:mm a");
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-
-        Date date = new Date(appointment.getTimestamp());
-
-        prescriptionRes.setTime(simpleDateFormat.format(date));
+    
+        Timestamp submittedAt = appointment.getPrescription().getSubmittedAt();
+        if (submittedAt == null) {
+            throw new ResourceNotFoundException("Prescription submission time not found");
+        }
+    
+        String formattedTime = simpleDateFormat.format(new Date(submittedAt.getTime()));
+        prescriptionRes.setTime(formattedTime);
 
         prescriptionRes.setResidenceType(medicalDetailsRepository.findByPatient_Email(sapEmail).orElseThrow(()->new ResourceNotFoundException("No Patient Found")).getResidenceType());
 
