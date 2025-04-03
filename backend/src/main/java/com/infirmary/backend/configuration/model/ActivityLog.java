@@ -16,7 +16,8 @@ import org.hibernate.annotations.GenericGenerator;
 @Table(name = "activity_log")
 public class ActivityLog {
 
- @Id
+ @SuppressWarnings("deprecation")
+@Id
 @GeneratedValue(generator = "UUID")
 @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
 @Column(name = "id", updatable = false, nullable = false)
