@@ -300,4 +300,14 @@ public ResponseEntity<?> getLastPrescriptionDate(String sapEmail) {
         .orElse(ResponseEntity.ok(null));
 }
 
+@Override
+public ResponseEntity<?> updateEmergencyContact(String sapEmail, String emergencyContact) {
+    Patient patient = patientRepository.findByEmail(sapEmail)
+        .orElseThrow(() -> new PatientNotFoundException("Patient not found"));
+    patient.setEmergencyContact(emergencyContact);
+    patientRepository.save(patient);
+    return ResponseEntity.ok("Emergency contact updated successfully.");
+}
+
+
 }

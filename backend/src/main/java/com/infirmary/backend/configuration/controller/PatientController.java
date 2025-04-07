@@ -159,6 +159,12 @@ public ResponseEntity<?> getLastPrescriptionDate() {
 }
 
 
+@PreAuthorize("hasRole('ROLE_PATIENT')")
+@PutMapping("/updateEmergencyContact")
+public ResponseEntity<?> updateEmergencyContact(@RequestBody Map<String, String> payload) {
+    String emergencyContact = payload.get("emergencyContact");
+    return patientService.updateEmergencyContact(getTokenClaims(), emergencyContact);
+}
 
     
 }

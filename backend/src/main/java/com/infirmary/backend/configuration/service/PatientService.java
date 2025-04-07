@@ -99,4 +99,7 @@ public interface PatientService {
 
     ResponseEntity<?> getLastPrescriptionDate(String sapEmail);
 
+    ResponseEntity<?> updateEmergencyContact(String sapEmail, String emergencyContact);
+
+
 }

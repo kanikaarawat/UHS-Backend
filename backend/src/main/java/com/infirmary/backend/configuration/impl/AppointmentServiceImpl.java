@@ -1,6 +1,5 @@
 package com.infirmary.backend.configuration.impl;
 
-import java.util.Map;
 import com.infirmary.backend.configuration.Exception.AppointmentNotFoundException;
 import com.infirmary.backend.configuration.Exception.DoctorNotFoundException;
 import com.infirmary.backend.configuration.Exception.PatientNotFoundException;
@@ -13,7 +12,7 @@ import com.infirmary.backend.configuration.repository.*;
 import com.infirmary.backend.configuration.service.AppointmentService;
 import com.infirmary.backend.shared.utility.AppointmentQueueManager;
 import com.infirmary.backend.shared.utility.MessageConfigUtil;
-import com.infirmary.backend.configuration.repository.AdRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.infirmary.backend.shared.utility.FunctionUtil.createSuccessResponse;
@@ -38,6 +38,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentFormRepository appointmentFormRepository;
     private final AdRepository adRepository;
     private final CurrentAppointmentRepository currentAppointmentRepository;
+    private final DeletedAppointmentRepository deletedAppointmentRepository;
+
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -46,7 +48,9 @@ public class AppointmentServiceImpl implements AppointmentService {
             DoctorRepository doctorRepository,
             AppointmentFormRepository appointmentFormRepository,
             AdRepository adRepository,
-            CurrentAppointmentRepository currentAppointmentRepository) {
+            CurrentAppointmentRepository currentAppointmentRepository,
+            DeletedAppointmentRepository deletedAppointmentRepository
+            ) {
         this.appointmentRepository = appointmentRepository;
         this.messageConfigUtil = messageConfigUtil;
         this.patientRepository = patientRepository;
@@ -54,6 +58,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.appointmentFormRepository = appointmentFormRepository;
         this.adRepository = adRepository;
         this.currentAppointmentRepository = currentAppointmentRepository;
+        this.deletedAppointmentRepository = deletedAppointmentRepository;
     }
 
     @Override
@@ -144,28 +149,71 @@ public class AppointmentServiceImpl implements AppointmentService {
     public ResponseEntity<?> manualSubmitAppointment(AppointmentReqDTO req, String adEmail) {
         Patient patient = patientRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found with email: " + req.getEmail()));
-
+    
+        AD ad = adRepository.findByAdEmail(adEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("AD not found"));
+    
+        if (ad.getLocation() == null)
+            throw new IllegalArgumentException("AD not assigned to a location");
+    
+        // Get or create CurrentAppointment
+        CurrentAppointment current = currentAppointmentRepository.findByPatient_Email(req.getEmail()).orElse(null);
+        if (current == null) {
+            current = new CurrentAppointment();
+            current.setPatient(patient);
+        }
+    
+        // Reject all old appointments in other campuses
+        List<Appointment> existingAppointments = appointmentRepository.findByPatient_Email(req.getEmail());
+        for (Appointment oldAppointment : existingAppointments) {
+            if (oldAppointment.getLocation() != null &&
+                !oldAppointment.getLocation().getLocId().equals(ad.getLocation().getLocId())) {
+    
+                DeletedAppointment deleted = DeletedAppointment.builder()
+                        .appointmentId(oldAppointment.getAppointmentId())
+                        .patientName(patient.getName())
+                        .patientEmail(patient.getEmail())
+                        .reason(oldAppointment.getAptForm() != null ? oldAppointment.getAptForm().getReason() : "Manual overwrite")
+                        .deletedAt(LocalDateTime.now())
+                        .deletedBy(adEmail)
+                        .build();
+                deletedAppointmentRepository.save(deleted);
+    
+                AppointmentQueueManager.removeElement(oldAppointment.getAppointmentId());
+                AppointmentQueueManager.removeApptEl(oldAppointment.getAppointmentId());
+    
+                if (oldAppointment.getAptForm() != null) {
+                    appointmentFormRepository.deleteById(oldAppointment.getAptForm().getId());
+                }
+    
+                // Clean up current if this was the linked appointment
+                if (current.getAppointment() != null &&
+                    current.getAppointment().getAppointmentId().equals(oldAppointment.getAppointmentId())) {
+                    current.setDoctor(null);
+                    current.setAppointment(null);
+                }
+    
+                appointmentRepository.deleteById(oldAppointment.getAppointmentId());
+            }
+        }
+    
+        // Create and save new appointment
         AppointmentForm aptForm = new AppointmentForm();
         aptForm.setReason(req.getReason());
         aptForm.setIsFollowUp(false);
         aptForm.setReasonForPreference(req.getReasonPrefDoctor());
-
+    
         if (req.getPreferredDoctor() != null) {
             Doctor doctor = doctorRepository.findById(req.getPreferredDoctor())
                     .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
             aptForm.setPrefDoctor(doctor);
         }
-
+    
         aptForm = appointmentFormRepository.save(aptForm);
-
-        AD ad = adRepository.findByAdEmail(adEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("AD not found"));
-        if (ad.getLocation() == null)
-            throw new IllegalArgumentException("AD not assigned to a location");
-
+    
         Integer maxToken = appointmentRepository.findMaxTokenNoForDateAndLocation(LocalDate.now(), ad.getLocation().getLocId());
         int newToken = maxToken + 1;
-
+    
         Appointment appointment = new Appointment();
         appointment.setAptForm(aptForm);
         appointment.setPatient(patient);
@@ -175,22 +223,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setLocation(ad.getLocation());
         appointment.setDoctor(null);
         appointment = appointmentRepository.save(appointment);
-
-        CurrentAppointment current = currentAppointmentRepository.findByPatient_Email(req.getEmail())
-                .orElseGet(() -> {
-                    CurrentAppointment newCurrent = new CurrentAppointment();
-                    newCurrent.setPatient(patient);
-                    return newCurrent;
-                });
+    
         current.setAppointment(appointment);
         currentAppointmentRepository.save(current);
-
+    
         AppointmentQueueManager.addAppointmentToQueue(appointment.getAppointmentId());
-
+    
         return createSuccessResponse(Map.of(
                 "message", "Manual appointment created",
                 "appointmentId", appointment.getAppointmentId(),
                 "tokenNo", newToken
         ));
     }
-}
+}    
