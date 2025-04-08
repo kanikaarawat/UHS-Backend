@@ -90,15 +90,19 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         return appointmentList.stream().map(AppointmentDTO::new).toList();
     }
-
+    
     @Override
     public LocalDate getLastAppointmentDateByEmail(String patientEmail) throws AppointmentNotFoundException {
-        Optional<Appointment> lastAppointment = appointmentRepository.findFirstByPatient_EmailOrderByDateDesc(patientEmail);
+        Optional<Appointment> lastAppointment = appointmentRepository
+            .findFirstByPatient_EmailAndPrescriptionIsNotNullOrderByDateDesc(patientEmail);
+    
         if (lastAppointment.isEmpty()) {
             throw new AppointmentNotFoundException(messageConfigUtil.getAppointmentNotFoundException());
         }
-        return lastAppointment.map(Appointment::getDate).orElse(null);
+    
+        return lastAppointment.get().getDate();
     }
+    
 
     @Override
     public void scheduleAppointment(UUID appointmentId) {
