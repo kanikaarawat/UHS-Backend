@@ -295,39 +295,55 @@ DeletedAppointment deletedAppointment = DeletedAppointment.builder()
     //Complete a appointment for a patient
     @Override
     public String completeAppointment(String sapEmail) {
-        sapEmail = sapEmail.substring(0,sapEmail.indexOf("@")).concat(sapEmail.substring(sapEmail.indexOf("@")).replaceAll(",", "."));
-
-        CurrentAppointment currentAppointment = currentAppointmentRepository.findByPatient_Email(sapEmail).orElseThrow(()->new ResourceNotFoundException("No Appointment Scheduled"));
-
-        if(currentAppointment.getAppointment() == null) throw new ResourceNotFoundException("No Appointment Scheduled");
-
-        List<PrescriptionMeds> medLst = new ArrayList<>(currentAppointment.getAppointment().getPrescription().getMedicine());
-        
+        sapEmail = sapEmail.substring(0, sapEmail.indexOf("@")) +
+                   sapEmail.substring(sapEmail.indexOf("@")).replaceAll(",", ".");
+    
+        CurrentAppointment currentAppointment = currentAppointmentRepository
+            .findByPatient_Email(sapEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("No Appointment Scheduled"));
+    
+        if (currentAppointment.getAppointment() == null) {
+            throw new ResourceNotFoundException("No Appointment Scheduled");
+        }
+    
+        Appointment appointment = currentAppointment.getAppointment();
+    
+        // ✅ Mark status as completed by AD
+        appointment.setStatus("COMPLETED_BY_AD");
+    
+        List<PrescriptionMeds> medLst = new ArrayList<>(appointment.getPrescription().getMedicine());
+    
         List<Stock> stocks = new ArrayList<>();
-
-        for(PrescriptionMeds meds:medLst){
-            Stock stock = stockRepository.findById(meds.getMedicine().getId()).orElseThrow(()->new ResourceNotFoundException("No Such Medicine Exists"));
-
-            Integer medQty = (int) Math.ceil((meds.getDosageAfternoon()+meds.getDosageEvening()+meds.getDosageMorning())*meds.getDuration());
-
-            if(stock.getQuantity() - (medQty)<0) throw new IllegalArgumentException("Medicine Quantity Not Enough");
-
-            stock.setQuantity(stock.getQuantity() - (medQty));
-
+    
+        for (PrescriptionMeds meds : medLst) {
+            Stock stock = stockRepository.findById(meds.getMedicine().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("No Such Medicine Exists"));
+    
+            Integer medQty = (int) Math.ceil(
+                (meds.getDosageAfternoon() + meds.getDosageEvening() + meds.getDosageMorning()) * meds.getDuration()
+            );
+    
+            if (stock.getQuantity() - medQty < 0) {
+                throw new IllegalArgumentException("Medicine Quantity Not Enough");
+            }
+    
+            stock.setQuantity(stock.getQuantity() - medQty);
             stocks.add(stock);
         }
-
+    
         stockRepository.saveAll(stocks);
-
-        AppointmentQueueManager.removeApptEl(currentAppointment.getAppointment().getAppointmentId());
-        
+    
+        // 🧠 Save appointment with updated status
+        appointmentRepository.save(appointment);
+    
+        AppointmentQueueManager.removeApptEl(appointment.getAppointmentId());
+    
         currentAppointment.setAppointment(null);
-
         currentAppointmentRepository.save(currentAppointment);
-
+    
         return "Appointment Completed";
     }
-
+    
     //Get All the doctors and tokens assigned
     @Override
     public ResponseEntity<?> getTokenData(String email) {
