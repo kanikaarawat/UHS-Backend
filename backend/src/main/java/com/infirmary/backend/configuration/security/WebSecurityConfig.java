@@ -220,11 +220,22 @@ public SecurityFilterChain prescriptionSecurityFilterChain(HttpSecurity http) th
     return http.build();
 }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/api/location/*").permitAll().requestMatchers("/Profile/*").permitAll().anyRequest().denyAll());
-        return http.build();
-    }
+@Bean
+public SecurityFilterChain fallbackSecurityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/location/**", "/Profile/**").permitAll()
+            .anyRequest().authenticated()
+        )
+        .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(authenticatioTokenFilterPatient(), UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+}
+
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {

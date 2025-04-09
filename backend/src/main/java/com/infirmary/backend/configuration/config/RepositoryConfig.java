@@ -10,6 +10,6 @@ public class RepositoryConfig implements RepositoryRestConfigurer {
 
     @Override
     public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
-        config.disableDefaultExposure(); // ✅ this disables auto-exposed HAL APIs
+        // config.disableDefaultExposure(); 
     }
 }
