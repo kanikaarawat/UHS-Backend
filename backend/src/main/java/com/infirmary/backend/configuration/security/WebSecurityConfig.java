@@ -220,6 +220,7 @@ public SecurityFilterChain prescriptionSecurityFilterChain(HttpSecurity http) th
     return http.build();
 }
 
+@Order(Integer.MAX_VALUE)
 @Bean
 public SecurityFilterChain fallbackSecurityFilterChain(HttpSecurity http) throws Exception {
     http

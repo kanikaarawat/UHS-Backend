@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class LocationController {
     private final LocationRepository locationRepository;
 
-    @GetMapping(value = "/")
+    @GetMapping
     public ResponseEntity<?> getAllLocations(){
         return createSuccessResponse(locationRepository.findAll());
     }
