@@ -46,7 +46,24 @@ public class JwtUtils {
     public String genrateJwtToken(Authentication authentication){
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
-        return Jwts.builder().setSubject(userPrincipal.getUsername()).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis()+jwtExpiration)).signWith(key(),SignatureAlgorithm.HS256).compact();
+        return Jwts.builder()
+        .setSubject(userPrincipal.getUsername())
+        .claim("role", userPrincipal.getAuthorities().stream().findFirst().get().getAuthority()) // ✅ Add this
+        .setIssuedAt(new Date())
+        .setExpiration(new Date(System.currentTimeMillis()+jwtExpiration))
+        .signWith(key(),SignatureAlgorithm.HS256)
+        .compact();
+    
     }
+
+    public String getRoleFromJwtToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("role", String.class);
+    }
+    
 
 }

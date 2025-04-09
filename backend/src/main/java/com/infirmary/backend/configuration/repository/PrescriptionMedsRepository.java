@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.infirmary.backend.configuration.model.Prescription;
 import com.infirmary.backend.configuration.model.PrescriptionMeds;
 import com.infirmary.backend.configuration.model.Stock;
 
@@ -38,5 +39,8 @@ public interface PrescriptionMedsRepository extends JpaRepository<PrescriptionMe
         @Modifying
         @Query("UPDATE PrescriptionMeds pm SET pm.medicine = :newStock WHERE pm.medicine = :oldStock")
         void reassignPrescriptions(@Param("oldStock") Stock oldStock, @Param("newStock") Stock newStock);
+
+            List<PrescriptionMeds> findByPrescription(Prescription prescription);
+
 
 }

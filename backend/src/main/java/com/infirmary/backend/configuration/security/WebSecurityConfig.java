@@ -207,6 +207,19 @@ public class WebSecurityConfig {
             return http.build();
     }
 
+    @Order(7)
+@Bean
+public SecurityFilterChain prescriptionSecurityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .securityMatcher("/api/prescription/**")
+        .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+        .addFilterBefore(authenticatioTokenFilterPatient(), UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+}
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
         http.authorizeHttpRequests(auth -> auth.requestMatchers("/api/location/*").permitAll().requestMatchers("/Profile/*").permitAll().anyRequest().denyAll());

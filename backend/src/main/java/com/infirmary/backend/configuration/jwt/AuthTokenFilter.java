@@ -72,6 +72,18 @@ public class AuthTokenFilter extends OncePerRequestFilter{
             else if (requestURI.startsWith("/api/current-appointment/")) {
                 userDetails = patientDetailsImpl.loadUserByUsername(username);
             }
+            else if (requestURI.startsWith("/api/prescription/")) {
+                String role = jwtUtils.getRoleFromJwtToken(jwt); // ✅ FIXED
+                System.out.println("🔐 Extracted role from JWT: " + role);
+                switch (role) {
+                    case "ROLE_PATIENT" -> userDetails = patientDetailsImpl.loadUserByUsername(username);
+                    case "ROLE_DOCTOR" -> userDetails = doctorDetailsImpl.loadUserByUsername(username);
+                    case "ROLE_AD" -> userDetails = adDetailsImpl.loadUserByUsername(username);
+                    case "ROLE_ADMIN" -> userDetails = adminDetailsImpl.loadUserByUsername(username);
+                    case "ROLE_ANALYTICS" -> userDetails = analyticsDetailsImpl.loadUserByUsername(username);
+                    default -> throw new IllegalArgumentException("Unknown role for prescription access");
+                }
+            }
             
 
             if(userDetails == null) throw new IllegalArgumentException("No valid Endpoint exists");
