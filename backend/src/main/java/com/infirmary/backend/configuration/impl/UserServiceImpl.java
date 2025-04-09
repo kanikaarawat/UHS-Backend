@@ -22,6 +22,8 @@ public class UserServiceImpl implements UserService {
     public List<UserDTO> getAllUsers() {
         return patientRepository.findAll().stream()
             .map(p -> UserDTO.builder()
+                .id(p.getEmail())                  // or p.getId() if you have a UUID/PK
+                .sapId(p.getSapId())               // ✅ Set SAP ID here
                 .email(p.getEmail())
                 .name(p.getName())
                 .phoneNumber(p.getPhoneNumber())
@@ -30,7 +32,6 @@ public class UserServiceImpl implements UserService {
                 .build())
             .collect(Collectors.toList());
     }
-    
 
     @Override
     public UserDTO createUser(UserDTO dto) {

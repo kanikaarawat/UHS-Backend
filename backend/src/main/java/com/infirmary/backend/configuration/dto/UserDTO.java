@@ -14,7 +14,7 @@ public class UserDTO {
     private String status;
     private String lastLogin;
     private String password;
-
+    private String sapId;          // ✅ Add this line
     private String phoneNumber; // ✅ Add this
     private String bloodGroup;  // ✅ Add this
     private String school;      // ✅ Add this
