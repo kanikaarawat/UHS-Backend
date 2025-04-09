@@ -81,7 +81,7 @@
         <td style="background-color: #dddce2; padding: 6px 10px; border-radius: 4px; width: 40%;">
             ${name}
         </td>
-        <td style="font-weight: bold; width: 90px;">ID:</td>
+        <td style="font-weight: bold; width: 90px;">SAP ID:</td>
         <td style="background-color: #dddce2; padding: 6px 10px; border-radius: 4px;">
             ${id}
         </td>
@@ -97,11 +97,11 @@
         </td>
     </tr>
     <tr>
-        <td style="font-weight: bold;">Sex:</td>
+        <td style="font-weight: bold;">Gender:</td>
         <td style="background-color: #dddce2; padding: 6px 10px; border-radius: 4px;">
             ${sex}
         </td>
-        <td style="font-weight: bold;">Residence Type:</td>
+        <td style="font-weight: bold;">Program:</td>
         <td style="background-color: #dddce2; padding: 6px 10px; border-radius: 4px;">
             ${residenceType}
         </td>
