@@ -61,7 +61,7 @@
 <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
     <tr>
         <td style="width: 20%;">
-            <img src="http://localhost:8081/assets/upes-logo.jpg" style="height: 50px;" />
+            <img src="https://uhs-backend.onrender.com/assets/upes-logo.jpg" style="height: 50px;" />
         </td>
         <td style="text-align: center; font-size: 20px; font-weight: bold;">
             UPES Health Services
