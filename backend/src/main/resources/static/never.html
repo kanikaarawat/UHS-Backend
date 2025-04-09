@@ -1,44 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Still Loading...</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #fafafa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            color: #444;
-            text-align: center;
-        }
-        img {
-            max-width: 250px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 2em;
-            color: #222;
-        }
-        p {
-            font-size: 1.2em;
-            color: #555;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>This Page Shall Never Load</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      text-align: center;
+    }
+    img {
+      width: 300px;
+      max-width: 80%;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    .quote {
+      font-size: 1.5rem;
+      padding: 0 2rem;
+      max-width: 700px;
+      transition: all 0.3s ease-in-out;
+    }
+  </style>
 </head>
 <body>
-    <img src="/assets/image.png" alt="Skeleton Waiting">
-    <h1>Keep waiting... the page is shy.</h1>
-    <p>
-        It dreams of loading, day and night,<br>
-        Yet never dares to take the flight.<br>
-        So sit and stare, or walk away—<br>
-        This page shall not arrive today.
-    </p>
+  <img src="assets/image.png" alt="Funny Image" />
+  <div class="quote" id="quoteDisplay"></div>
+
+  <script>
+    const quotes = [
+      "Patience, dear traveler — this path leads nowhere.",
+      "Reload if you must, but the end shall never come.",
+      "This page is but a mirage; seek no answers here.",
+      "A thousand clicks won't break the spell.",
+      "Wanderer beware — this page is cursed to never bloom."
+    ];
+
+    const random = Math.floor(Math.random() * quotes.length);
+    document.getElementById("quoteDisplay").textContent = quotes[random];
+  </script>
 </body>
 </html>
