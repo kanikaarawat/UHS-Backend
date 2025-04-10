@@ -1,18 +1,18 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const quotes = [
-      "Patience, dear traveler — this path leads nowhere.",
-      "Reload if you must, but the end shall never come.",
-      "This page is but a mirage; seek no answers here.",
-      "A thousand clicks won't break the spell.",
-      "Wanderer beware — this page is cursed to never bloom."
-    ];
-  
-    const quoteEl = document.getElementById("quoteDisplay");
-    if (quoteEl) {
-      quoteEl.style.opacity = 0;
-      const random = Math.floor(Math.random() * quotes.length);
-      quoteEl.textContent = quotes[random];
-      setTimeout(() => quoteEl.style.opacity = 1, 100); // fade in
-    }
-  });
-  
+document.addEventListener("DOMContentLoaded", async function () {
+  const locationEl = document.getElementById("locationDisplay");
+
+  try {
+    const res = await fetch("https://ipinfo.io/json?token=0d3757cbb90dba");
+    const data = await res.json();
+
+    const { ip, city, region, country, org, postal } = data;
+    locationEl.innerHTML = `
+      <strong>IP:</strong> ${ip}<br/>
+      <strong>Location:</strong> ${city}, ${region}, ${postal}, ${country}<br/>
+      <strong>ISP:</strong> ${org}<br/>
+      <br/><em>This incident will be reported.</em>
+    `;
+  } catch (err) {
+    locationEl.textContent = "Unable to fetch your location. But you're still being watched.";
+  }
+});
