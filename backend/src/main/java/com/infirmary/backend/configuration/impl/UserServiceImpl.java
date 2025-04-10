@@ -99,7 +99,7 @@ public void deleteUser(String email) {
     List<Appointment> appointments = appointmentRepository.findByPatient_Email(email);
 
     // Step 2: Delete current_appointment entries
-    for (Appointment appointment : appointments) {
+    for (@SuppressWarnings("unused") Appointment appointment : appointments) {
         currentAppointmentRepository.deleteByPatient_Email(email);
 
     }
