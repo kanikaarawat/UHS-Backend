@@ -50,17 +50,25 @@ public class AnalyticsServiceImpl implements AnalyticsService{
                 UUID doctorId = doctorOpt.get().getDoctorId();
                 LocalDate lastDate = LocalDate.now(ZoneId.of("Asia/Kolkata")).minusDays(30);
                 return appointmentRepository.countAppointmentsForDoctor(doctorId, lastDate);
-            }
+            } else {
+                // Check for admin role explicitly
+                boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     
-            // Not a doctor, assume admin
-            return appointmentRepository.countDistinctPatients();
+                if (isAdmin) {
+                    return appointmentRepository.countDistinctPatients();
+                } else {
+                    log.error("Unauthorized role for analytics access: {}", auth.getAuthorities());
+                    throw new RuntimeException("Unauthorized access to analytics.");
+                }
+            }
     
         } catch (Exception e) {
             log.error("Error in getAllPatient()", e);
             throw new RuntimeException("Error while retrieving total patient count.");
         }
     }
-    
+     
     @Override
     public List<Object[]> getPatientSchoolWise() {
         LocalDate lasDate = Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.of("Asia/Kolkata")).toLocalDate();
