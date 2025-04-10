@@ -9,7 +9,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/never.html");
-        registry.addViewController("/profile").setViewName("forward:/never.html");
+        registry.addViewController("/").setViewName("forward:/unauthorized.html");
+        registry.addViewController("/profile").setViewName("forward:/unauthorized.html");
     }
 }
