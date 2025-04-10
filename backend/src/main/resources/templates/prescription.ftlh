@@ -67,8 +67,7 @@
             UPES Health Services
         </td>
         <td style="width: 20%; text-align: right; font-size: 12px;">
-            <div>${time?substring(0,5)}</div>
-            <div>${date}</div>
+    <div>${date?string("dd-MM-yyyy")}</div>
         </td>
     </tr>
 </table>
