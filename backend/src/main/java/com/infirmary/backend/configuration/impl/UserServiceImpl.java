@@ -100,7 +100,8 @@ public void deleteUser(String email) {
 
     // Step 2: Delete current_appointment entries
     for (Appointment appointment : appointments) {
-        currentAppointmentRepository.deleteByAppointment_AppointmentId(appointment.getAppointmentId());
+        currentAppointmentRepository.deleteByPatient_Email(email);
+
     }
 
     // Step 3: Delete conformation entries

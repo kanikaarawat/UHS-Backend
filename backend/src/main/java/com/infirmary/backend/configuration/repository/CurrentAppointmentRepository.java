@@ -34,6 +34,7 @@ public interface CurrentAppointmentRepository extends JpaRepository<CurrentAppoi
     @Query("SELECT ca FROM CurrentAppointment ca WHERE ca.doctor IS NOT NULL AND ca.appointment.location.locId = :locationId")
     Optional<CurrentAppointment> findCurrentDetailsByLocationId(@Param("locationId") Long locationId);
 
-    void deleteByAppointment_AppointmentId(UUID appointmentId);
+    void deleteByPatient_Email(String email);
+
 
 }
