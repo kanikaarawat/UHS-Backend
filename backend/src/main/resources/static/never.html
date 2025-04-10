@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>404 - This Page Shall Never Load</title>
+  <title>This Page Shall Never Load</title>
   <style>
     body {
       margin: 0;
@@ -17,55 +17,25 @@
       height: 100vh;
       flex-direction: column;
       text-align: center;
-      overflow: hidden;
     }
-
     img {
       width: 300px;
       max-width: 80%;
       border-radius: 12px;
       margin-bottom: 2rem;
       box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-      transform: rotateZ(-10deg);
-      transition: transform 1s ease;
     }
-
     .quote {
       font-size: 1.5rem;
       padding: 0 2rem;
       max-width: 700px;
-      opacity: 0;
-      animation: fadeIn 2s ease forwards;
-    }
-
-    .notfound {
-      font-size: 2.5rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-      animation: fadeInSlide 1.5s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; transform: translateY(20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeInSlide {
-      0% { opacity: 0; transform: translateY(-30px); }
-      100% { opacity: 1; transform: translateY(0); }
+      transition: all 0.3s ease-in-out;
     }
   </style>
 </head>
 <body>
-  <div class="notfound">404 — Page Not Found</div>
-  <img src="assets/image.png" alt="Funny Image" />
+  <img src="/assets/image.png" alt="Funny Image" />
   <div class="quote" id="quoteDisplay"></div>
-
-  <!-- Background Music -->
-  <audio autoplay loop hidden>
-    <source src="https://cdn.pixabay.com/audio/2022/03/28/audio_c86f9df3ee.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
 
   <script>
     const quotes = [
@@ -73,13 +43,11 @@
       "Reload if you must, but the end shall never come.",
       "This page is but a mirage; seek no answers here.",
       "A thousand clicks won't break the spell.",
-      "Wanderer beware — this page is cursed to never bloom.",
-      "The pixels lie. The truth is not here.",
-      "A ghost of a page... destined to stay incomplete."
+      "Wanderer beware — this page is cursed to never bloom."
     ];
 
-    const quote = quotes[Math.floor(Math.random() * quotes.length)];
-    document.getElementById("quoteDisplay").textContent = quote;
+    const random = Math.floor(Math.random() * quotes.length);
+    document.getElementById("quoteDisplay").textContent = quotes[random];
   </script>
 </body>
 </html>
