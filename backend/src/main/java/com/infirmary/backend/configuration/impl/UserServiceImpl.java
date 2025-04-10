@@ -89,6 +89,7 @@ public class UserServiceImpl implements UserService {
 @Override
 @Transactional
 public void deleteUser(String email) {
+    @SuppressWarnings("unused")
     Patient patient = patientRepository.findById(email)
         .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
 

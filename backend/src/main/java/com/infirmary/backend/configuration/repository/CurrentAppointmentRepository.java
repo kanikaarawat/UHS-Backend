@@ -1,6 +1,5 @@
 package com.infirmary.backend.configuration.repository;
 
-import com.infirmary.backend.configuration.model.Appointment;
 import com.infirmary.backend.configuration.model.CurrentAppointment;
 import com.infirmary.backend.configuration.model.Doctor;
 import com.infirmary.backend.configuration.model.Location;
