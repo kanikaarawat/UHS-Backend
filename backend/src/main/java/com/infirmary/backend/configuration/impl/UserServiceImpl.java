@@ -7,6 +7,7 @@ import com.infirmary.backend.configuration.repository.AppointmentRepository;
 import com.infirmary.backend.configuration.repository.ConformationRepository;
 import com.infirmary.backend.configuration.repository.CurrentAppointmentRepository;
 import com.infirmary.backend.configuration.repository.MedicalDetailsRepository;
+import com.infirmary.backend.configuration.repository.PasswordChangeRepository;
 import com.infirmary.backend.configuration.repository.PatientRepository;
 import com.infirmary.backend.configuration.repository.PrescriptionRepository;
 import com.infirmary.backend.configuration.service.UserService;
@@ -24,6 +25,7 @@ public class UserServiceImpl implements UserService {
     private final ConformationRepository conformationRepository;
     private final PatientRepository patientRepository;
     private final CurrentAppointmentRepository currentAppointmentRepository;
+    private PasswordChangeRepository passwordChangeRepository;
 
     public UserServiceImpl(
         PatientRepository patientRepository,
@@ -32,7 +34,8 @@ public class UserServiceImpl implements UserService {
         AppointmentRepository appointmentRepository,
         PrescriptionRepository prescriptionRepository,
         CurrentAppointmentRepository currentAppointmentRepository,
-        ConformationRepository conformationRepository
+        ConformationRepository conformationRepository,
+        PasswordChangeRepository passwordChangeRepository
     ) {
         this.medicalDetailsRepository = medicalDetailsRepository;
         this.adPrescriptionRepository = adPrescriptionRepository;
@@ -41,6 +44,7 @@ public class UserServiceImpl implements UserService {
         this.currentAppointmentRepository = currentAppointmentRepository;
         this.conformationRepository = conformationRepository;
         this.patientRepository = patientRepository;
+        this.passwordChangeRepository = passwordChangeRepository;
     }    
 
     @Override
@@ -94,20 +98,13 @@ public void deleteUser(String email) {
         .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
 
     System.out.println("Deleting user: " + email);
-
-    // Step 1: Fetch all appointments
     List<Appointment> appointments = appointmentRepository.findByPatient_Email(email);
 
-    // Step 2: Delete current_appointment entries
     for (@SuppressWarnings("unused") Appointment appointment : appointments) {
         currentAppointmentRepository.deleteByPatient_Email(email);
-
     }
-
-    // Step 3: Delete conformation entries
+    passwordChangeRepository.deleteByPatientEmail(email);
     conformationRepository.deleteByPatient_Email(email);
-
-    // Step 4: Delete other dependent records
     prescriptionRepository.deleteByPatientEmail(email);
     adPrescriptionRepository.deleteByPatientEmail(email);
     appointmentRepository.deleteByPatientEmail(email);

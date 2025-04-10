@@ -14,4 +14,5 @@ public interface PasswordChangeRepository extends JpaRepository<PasswordChange,U
     Optional<PasswordChange> findByPatient(Patient patient);
     Optional<PasswordChange> findByAd(AD ad);
     Optional<PasswordChange> findByDoctor(Doctor doctor);
+    void deleteByPatientEmail(String email);
 }
