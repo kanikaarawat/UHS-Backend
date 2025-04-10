@@ -27,7 +27,7 @@ public class StockDTO {
     @NotBlank(message = "Please provide composition")
     private String composition;
 
-    @Min(message = "Please provide quantity", value = 1)
+    @Min(message = "Atleast 1 medicine should be left in this location", value = 1)
     @NotNull(message = "Quantity cannot be empty")
     private Long quantity;
 
