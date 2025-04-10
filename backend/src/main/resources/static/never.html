@@ -18,7 +18,6 @@
       flex-direction: column;
       text-align: center;
     }
-
     img {
       width: 300px;
       max-width: 80%;
@@ -26,19 +25,12 @@
       margin-bottom: 2rem;
       box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     }
-
     .quote {
       font-size: 1.5rem;
       padding: 0 2rem;
       max-width: 700px;
+      transition: opacity 1s ease-in-out;
       opacity: 0;
-      animation: fadeIn 2s ease-in-out forwards;
-    }
-
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-      }
     }
   </style>
 </head>
@@ -46,21 +38,6 @@
   <img src="/assets/image.png" alt="Funny Image" />
   <div class="quote" id="quoteDisplay"></div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const quotes = [
-        "Patience, dear traveler — this path leads nowhere.",
-        "Reload if you must, but the end shall never come.",
-        "This page is but a mirage; seek no answers here.",
-        "A thousand clicks won't break the spell.",
-        "Wanderer beware — this page is cursed to never bloom."
-      ];
-
-      const random = Math.floor(Math.random() * quotes.length);
-      const quoteEl = document.getElementById("quoteDisplay");
-      quoteEl.textContent = quotes[random];
-      quoteEl.classList.add("quote"); // ensure fade-in class is applied after content load
-    });
-  </script>
+  <script src="/never.js" defer></script>
 </body>
 </html>
