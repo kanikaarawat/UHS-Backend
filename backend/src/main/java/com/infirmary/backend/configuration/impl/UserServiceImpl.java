@@ -72,11 +72,18 @@ public class UserServiceImpl implements UserService {
         Patient patient = patientRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found: " + id));
     
-        // Update relevant fields
+        // ✅ Update all editable fields
         patient.setName(dto.getName());
         patient.setPhoneNumber(dto.getPhoneNumber());
         patient.setBloodGroup(dto.getBloodGroup());
         patient.setSchool(dto.getSchool());
+        patient.setSapId(dto.getSapId());
+        patient.setEmergencyContact(dto.getEmergencyContact());
+        patient.setGender(dto.getGender());
+        patient.setProgram(dto.getProgram());
+        if (dto.getDateOfBirth() != null) {
+            patient.setDateOfBirth(dto.getDateOfBirth());
+        }
     
         patientRepository.save(patient);
     
@@ -87,6 +94,10 @@ public class UserServiceImpl implements UserService {
                 .phoneNumber(patient.getPhoneNumber())
                 .bloodGroup(patient.getBloodGroup())
                 .school(patient.getSchool())
+                .sapId(patient.getSapId())
+                .emergencyContact(patient.getEmergencyContact())
+                .gender(patient.getGender())
+                .program(patient.getProgram())
                 .build();
     }
     

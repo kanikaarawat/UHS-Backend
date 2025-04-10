@@ -1,6 +1,7 @@
 package com.infirmary.backend.configuration.dto;
 
 import lombok.*;
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -14,8 +15,15 @@ public class UserDTO {
     private String status;
     private String lastLogin;
     private String password;
-    private String sapId;          // ✅ Add this line
-    private String phoneNumber; // ✅ Add this
-    private String bloodGroup;  // ✅ Add this
-    private String school;      // ✅ Add this
+    
+    private String sapId;
+    private String phoneNumber;
+    private String bloodGroup;
+    private String school;
+
+    // ✅ Add these fields
+    private LocalDate dateOfBirth;
+    private String program;
+    private String emergencyContact;
+    private String gender;
 }
