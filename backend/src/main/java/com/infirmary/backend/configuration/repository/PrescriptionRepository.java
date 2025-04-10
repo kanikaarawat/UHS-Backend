@@ -18,4 +18,6 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
     // Correct: Custom query to fetch all diagnosis values
     @Query("SELECT p.diagnosis FROM Prescription p")
     List<String> findAllDiagnosis();
+
+    void deleteByPatientEmail(String email);
 }

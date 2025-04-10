@@ -1,5 +1,6 @@
 package com.infirmary.backend.configuration.repository;
 
+import com.infirmary.backend.configuration.model.Appointment;
 import com.infirmary.backend.configuration.model.CurrentAppointment;
 import com.infirmary.backend.configuration.model.Doctor;
 import com.infirmary.backend.configuration.model.Location;
@@ -34,5 +35,6 @@ public interface CurrentAppointmentRepository extends JpaRepository<CurrentAppoi
     @Query("SELECT ca FROM CurrentAppointment ca WHERE ca.doctor IS NOT NULL AND ca.appointment.location.locId = :locationId")
     Optional<CurrentAppointment> findCurrentDetailsByLocationId(@Param("locationId") Long locationId);
 
+    void deleteByAppointment_AppointmentId(UUID appointmentId);
 
 }

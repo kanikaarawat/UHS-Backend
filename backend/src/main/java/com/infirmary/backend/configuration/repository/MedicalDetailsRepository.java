@@ -13,5 +13,6 @@ import org.springframework.stereotype.Repository;
 public interface MedicalDetailsRepository extends JpaRepository<MedicalDetails, UUID> {
     Optional<MedicalDetails> findByPatient_Email(@NonNull String email);
     Optional<MedicalDetails> findBySapEmail(String sapEmail);
+    void deleteByPatientEmail(String email);
 
 }

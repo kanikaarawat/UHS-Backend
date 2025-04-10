@@ -121,4 +121,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     
     long countByStatus(String status);
 
+    void deleteByPatientEmail(String email);
+
+
 }

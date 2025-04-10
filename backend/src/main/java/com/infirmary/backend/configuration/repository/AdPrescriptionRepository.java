@@ -10,4 +10,6 @@ import com.infirmary.backend.configuration.model.ADPrescription;
 
 public interface AdPrescriptionRepository extends JpaRepository<ADPrescription,UUID>{
     List<ADPrescription> findAllByDate(LocalDate date);
+    void deleteByPatientEmail(String email);
+
 }
