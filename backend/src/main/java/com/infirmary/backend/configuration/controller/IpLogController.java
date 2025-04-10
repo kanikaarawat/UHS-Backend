@@ -5,9 +5,11 @@ import com.infirmary.backend.configuration.dto.IpLogRequestDTO;
 import com.infirmary.backend.configuration.model.IpLog;
 import com.infirmary.backend.configuration.repository.IpLogRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -36,4 +38,12 @@ public class IpLogController {
         ipLogRepository.save(log);
         return ResponseEntity.ok("IP logged successfully");
     }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/admin/threat-logs")
+public ResponseEntity<List<IpLog>> getThreatLogs() {
+    List<IpLog> logs = ipLogRepository.findAllByOrderByTimestampDesc();
+    return ResponseEntity.ok(logs);
+}
+
 }
