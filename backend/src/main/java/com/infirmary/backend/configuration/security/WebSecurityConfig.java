@@ -227,9 +227,14 @@ public SecurityFilterChain fallbackSecurityFilterChain(HttpSecurity http) throws
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/location/**", "/Profile/**").permitAll()
-            .anyRequest().authenticated()
-        )
+        .requestMatchers(
+            "/api/location/**", 
+            "/Profile/**", 
+            "/api/otp/send", 
+            "/api/otp/verify"
+        ).permitAll()
+        .anyRequest().authenticated()
+    )    
         .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(authenticatioTokenFilterPatient(), UsernamePasswordAuthenticationFilter.class);

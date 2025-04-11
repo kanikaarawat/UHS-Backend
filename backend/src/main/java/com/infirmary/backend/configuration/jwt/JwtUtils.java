@@ -43,18 +43,30 @@ public class JwtUtils {
         return true;
     }
 
-    public String genrateJwtToken(Authentication authentication){
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-
-        return Jwts.builder()
-        .setSubject(userPrincipal.getUsername())
-        .claim("role", userPrincipal.getAuthorities().stream().findFirst().get().getAuthority()) // ✅ Add this
-        .setIssuedAt(new Date())
-        .setExpiration(new Date(System.currentTimeMillis()+jwtExpiration))
-        .signWith(key(),SignatureAlgorithm.HS256)
-        .compact();
+    public String genrateJwtToken(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        String username;
+        String role;
     
+        if (principal instanceof UserDetailsImpl userPrincipal) {
+            username = userPrincipal.getUsername();
+            role = userPrincipal.getAuthorities().stream().findFirst().get().getAuthority();
+        } else if (principal instanceof org.springframework.security.core.userdetails.User springUser) {
+            username = springUser.getUsername();
+            role = springUser.getAuthorities().stream().findFirst().get().getAuthority();
+        } else {
+            throw new IllegalArgumentException("Unsupported principal type for JWT generation.");
+        }
+    
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(key(), SignatureAlgorithm.HS256)
+                .compact();
     }
+    
 
     public String getRoleFromJwtToken(String token) {
         return Jwts.parserBuilder()
