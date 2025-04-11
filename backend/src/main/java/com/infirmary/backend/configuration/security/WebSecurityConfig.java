@@ -22,8 +22,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.infirmary.backend.configuration.jwt.AuthEntryPointJwt;
 import com.infirmary.backend.configuration.jwt.AuthTokenFilter;
@@ -262,15 +260,5 @@ public SecurityFilterChain fallbackSecurityFilterChain(HttpSecurity http) throws
         return source;
     }
     
- @Configuration
-public class StaticResourceConfig implements WebMvcConfigurer {
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve Profile images from the /static/Profile folder
-        registry.addResourceHandler("/Profile/**")
-                .addResourceLocations("classpath:/static/Profile/");
-    }
-   
-}
+    
 }
