@@ -6,7 +6,6 @@ import static com.infirmary.backend.shared.utility.FunctionUtil.createSuccessRes
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -25,9 +24,7 @@ import com.infirmary.backend.configuration.dto.LoginRequestDTO;
 import com.infirmary.backend.configuration.dto.PasswordChangeDTO;
 import com.infirmary.backend.configuration.dto.PatientReqDTO;
 import com.infirmary.backend.configuration.service.AuthService;
-import com.infirmary.backend.configuration.dto.OtpLoginRequestDTO;
-import com.infirmary.backend.configuration.dto.OtpVerificationRequestDTO;
-import com.infirmary.backend.configuration.service.OtpService;
+
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
@@ -37,13 +34,10 @@ import jakarta.validation.Valid;
 @Validated
 public class AuthController {
     private AuthService authService;
-    private final OtpService otpService;
 
-    public AuthController(AuthService authService, OtpService otpService){
+    public AuthController(AuthService authService){
         this.authService = authService;
-        this.otpService = otpService;
     }
-    
 
     @PostMapping("patient/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequestDTO loginRequest,BindingResult bindingResult){
@@ -89,25 +83,4 @@ public class AuthController {
     public List<?> test(){
         throw new IllegalAccessError();
     }
-
-    @PostMapping("/otp/send")
-    public ResponseEntity<?> sendOtp(@RequestBody OtpLoginRequestDTO request) {
-        try {
-            otpService.generateAndSendOtp(request.getEmail(), request.getPhoneNumber()); // ✅ Method name fixed
-            return ResponseEntity.ok().body("OTP sent successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to send OTP: " + e.getMessage());
-        }
-    }
-    
-    @PostMapping("/otp/verify")
-    public ResponseEntity<?> verifyOtp(@RequestBody OtpVerificationRequestDTO request) {
-        try {
-            String jwtToken = otpService.verifyOtp(request.getEmail(), request.getOtp()); // ✅ 2 args only
-            return ResponseEntity.ok().body(Map.of("token", jwtToken));
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body("Invalid OTP: " + e.getMessage());
-        }
-    }
-    
 }

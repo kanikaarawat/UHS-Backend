@@ -457,6 +457,51 @@ DeletedAppointment deletedAppointment = DeletedAppointment.builder()
         adPrescription.setQuantity(adHocSubmitDTO.getQuantity());
 
         adPrescriptionRepository.save(adPrescription);
+
+        // 🧹 Remove patient from appointment queue if exists
+Optional<CurrentAppointment> optionalCurrentAppointment = currentAppointmentRepository.findByPatient_Email(adHocSubmitDTO.getPatientEmail());
+
+if (optionalCurrentAppointment.isPresent()) {
+    CurrentAppointment curr = optionalCurrentAppointment.get();
+
+    if (curr.getAppointment() != null) {
+        Appointment appt = curr.getAppointment();
+
+        // Remove from appointment queue
+        if (appt.getDoctor() == null) {
+            AppointmentQueueManager.removeElement(appt.getAppointmentId());
+        } else {
+            AppointmentQueueManager.removeApptEl(appt.getAppointmentId());
+        }
+
+        // Save to DeletedAppointment log (optional)
+        DeletedAppointment deletedAppointment = DeletedAppointment.builder()
+            .appointmentId(appt.getAppointmentId())
+            .patientName(appt.getPatient().getName())
+            .patientEmail(appt.getPatient().getEmail())
+            .reason(appt.getAptForm() != null ? appt.getAptForm().getReason() : "Ad-Hoc override")
+            .deletedAt(LocalDateTime.now())
+            .deletedBy(adEmail)
+            .build();
+        deletedAppointmentRepository.save(deletedAppointment);
+
+        // Cleanup all appointment-related data
+        if (appt.getPrescription() != null) {
+            prescriptionRepository.delete(appt.getPrescription());
+        }
+
+        if (appt.getAptForm() != null) {
+            appointmentFormRepository.delete(appt.getAptForm());
+        }
+
+        curr.setAppointment(null);
+        curr.setDoctor(null);
+        currentAppointmentRepository.save(curr); // save first to break FK
+        appointmentRepository.delete(appt);     // then delete
+        
+    }
+}
+
         return "Appointment Created";
     }
 
