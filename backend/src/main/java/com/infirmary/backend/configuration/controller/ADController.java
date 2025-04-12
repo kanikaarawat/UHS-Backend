@@ -222,20 +222,20 @@ public class ADController {
         return adService.getTokenData(getTokenClaims());
     }
 
-    //Export to excel
-    @PreAuthorize("hasRole('ROLE_AD')")
-    @GetMapping(value = "/export")
-    public ResponseEntity<?> exportStocks() throws IOException {
-        byte[] excelContent = stockService.exportStocksToExcel();
 
-        ByteArrayResource resource = new ByteArrayResource(excelContent);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=medicine_stocks.xlsx");
-        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        headers.setContentLength(excelContent.length);
-
-        return createSuccessResponse(resource, headers);
-    }
+@PreAuthorize("hasRole('ROLE_AD')")
+@GetMapping(value = "/export")
+public ResponseEntity<byte[]> exportStocks(
+    @RequestParam(name = "filter", defaultValue = "all") String filter
+) throws IOException {
+    byte[] excelBytes = stockService.exportStocksToExcel(filter);
+    String filename = "medicine_stocks_" + filter + ".xlsx";
+    
+    return ResponseEntity.ok()
+        .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        .header("Content-Disposition", "attachment; filename=" + filename)
+        .body(excelBytes);
+}
 
     //Reassign Patient
     @PreAuthorize("hasRole('ROLE_AD')")

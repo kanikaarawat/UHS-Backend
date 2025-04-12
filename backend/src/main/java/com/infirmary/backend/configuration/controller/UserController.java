@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -29,7 +30,16 @@ public class UserController {
         return userService.getAllUsers();
     }
     
-    
+    @PutMapping("/password/{email}")
+public ResponseEntity<?> updatePassword(@PathVariable String email, @RequestBody Map<String, String> body) {
+    String newPassword = body.get("password");
+    if (newPassword == null || newPassword.isBlank()) {
+        return ResponseEntity.badRequest().body("Password cannot be empty");
+    }
+    userService.updatePassword(email, newPassword);
+    return ResponseEntity.ok("Password updated successfully");
+}
+
 
     @PostMapping
     public UserDTO createUser(@RequestBody UserDTO dto) {

@@ -10,4 +10,6 @@ public interface UserService {
     UserDTO updateUser(String id, UserDTO dto);
     void deleteUser(String id);
     Patient getUserByEmail(String email);
+    void updatePassword(String email, String newPassword);
+
 }

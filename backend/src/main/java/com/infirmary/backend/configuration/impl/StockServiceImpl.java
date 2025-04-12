@@ -251,49 +251,66 @@ public class StockServiceImpl implements StockService {
     }    
 
     @Override
-    public byte[] exportStocksToExcel() throws IOException {
-        List<Stock> allStocks = stockRepository.findAll();
-    
-        List<Stock> activeStocks = allStocks.stream()
-                .filter(stock -> stock.getQuantity() > 0)
-                .toList();
-    
-        List<Stock> deletedStocks = allStocks.stream()
-                .filter(stock -> stock.getQuantity() == 0)
-                .toList();
+    public byte[] exportStocksToExcel(String filter) throws IOException {
+        List<Stock> allStocks;
+        LocalDate today = LocalDate.now();
+        
+        switch (filter.toLowerCase()) {
+            case "all":
+                allStocks = stockRepository.findAll();
+                break;
+            case "expiring":
+                LocalDate nextMonth = today.plusMonths(1);
+                allStocks = stockRepository.findByExpirationDateBetweenAndQuantityGreaterThan(
+                    today, 
+                    nextMonth, 
+                    0L
+                );
+                break;
+            case "low":
+                allStocks = stockRepository.findByQuantityBetween(1L, 49L);
+                break;
+            case "expiring-low":
+                LocalDate nextMonthCombined = today.plusMonths(1);
+                allStocks = stockRepository.findByExpirationDateBetweenAndQuantityBetween(
+                    today, 
+                    nextMonthCombined, 
+                    1L, 
+                    49L
+                );
+                break;
+            case "available":
+                allStocks = stockRepository.findByQuantityGreaterThan(0L);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid filter type: " + filter);
+        }
     
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
     
             Sheet sheet = workbook.createSheet("Medicine Stocks");
-    
-            // Add header row
+            
+            // Header row
             Row headerRow = sheet.createRow(0);
             String[] columns = {
-                    "Batch Number", "Medicine Name", "Composition", "Quantity",
-                    "Medicine Type", "Expiration Date", "Company", "Location", "Status"
+                "Batch Number", "Medicine Name", "Composition", "Quantity",
+                "Medicine Type", "Expiration Date", "Company", "Location", "Status"
             };
-    
+            
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
             }
     
             int rowNum = 1;
-    
-            // Write active stocks
-            for (Stock stock : activeStocks) {
+            for (Stock stock : allStocks) {
                 Row row = sheet.createRow(rowNum++);
-                populateStockRow(row, stock, "Active");
+                String status = stock.getQuantity() > 0 ? "Active" : "Deleted";
+                populateStockRow(row, stock, status);
             }
     
-            // Write deleted stocks
-            for (Stock stock : deletedStocks) {
-                Row row = sheet.createRow(rowNum++);
-                populateStockRow(row, stock, "Deleted");
-            }
-    
-            // Autosize columns
+            // Auto-size columns
             for (int i = 0; i < columns.length; i++) {
                 sheet.autoSizeColumn(i);
             }
@@ -302,8 +319,7 @@ public class StockServiceImpl implements StockService {
             return out.toByteArray();
         }
     }
-    
-    private void populateStockRow(Row row, Stock stock, String status) {
+private void populateStockRow(Row row, Stock stock, String status) {
         row.createCell(0).setCellValue(stock.getBatchNumber());
         row.createCell(1).setCellValue(stock.getMedicineName());
         row.createCell(2).setCellValue(stock.getComposition());

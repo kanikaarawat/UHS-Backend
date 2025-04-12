@@ -21,7 +21,7 @@ public interface StockService {
     StockDTO getStockByBatchNumber(Long batchNumber) throws StockNotFoundException;
     List<StockDTO> getNullStock() throws StockNotFoundException;
     StockDTO addStock(StockDTO stockDTO,Long locId) throws StockAlreadyExists;
-    byte[] exportStocksToExcel() throws IOException;
+    byte[] exportStocksToExcel(String filter) throws IOException;
     List<Stock> getAllStocks();
     void deleteStock(UUID stockUuid) throws StockNotFoundException;
     List<Stock> getAvailableStock(Double longitude, Double latitude);

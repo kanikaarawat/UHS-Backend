@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -26,6 +27,8 @@ public class UserServiceImpl implements UserService {
     private final PatientRepository patientRepository;
     private final CurrentAppointmentRepository currentAppointmentRepository;
     private PasswordChangeRepository passwordChangeRepository;
+    private final PasswordEncoder passwordEncoder; // already used for hashing elsewhere
+
 
     public UserServiceImpl(
         PatientRepository patientRepository,
@@ -35,7 +38,8 @@ public class UserServiceImpl implements UserService {
         PrescriptionRepository prescriptionRepository,
         CurrentAppointmentRepository currentAppointmentRepository,
         ConformationRepository conformationRepository,
-        PasswordChangeRepository passwordChangeRepository
+        PasswordChangeRepository passwordChangeRepository,
+        PasswordEncoder passwordEncoder
     ) {
         this.medicalDetailsRepository = medicalDetailsRepository;
         this.adPrescriptionRepository = adPrescriptionRepository;
@@ -45,6 +49,7 @@ public class UserServiceImpl implements UserService {
         this.conformationRepository = conformationRepository;
         this.patientRepository = patientRepository;
         this.passwordChangeRepository = passwordChangeRepository;
+        this.passwordEncoder = passwordEncoder;
     }    
 
     @Override
@@ -130,6 +135,14 @@ public void deleteUser(String email) {
 @Override
 public Patient getUserByEmail(String email) {
     return patientRepository.findByEmail(email).orElse(null);
+}
+@Override
+public void updatePassword(String email, String newPassword) {
+    Patient patient = patientRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+    patient.setPassword(passwordEncoder.encode(newPassword));
+    patientRepository.save(patient);
 }
 
     
