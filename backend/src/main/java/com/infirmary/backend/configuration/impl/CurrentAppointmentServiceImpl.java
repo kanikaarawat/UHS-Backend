@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.List;
 
-
 @Service
 @Slf4j
 @Transactional
@@ -26,15 +25,16 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
     private final CurrentAppointmentRepository currentAppointmentRepository;
     private final MessageConfigUtil messageConfigUtil;
 
-    public CurrentAppointmentServiceImpl(CurrentAppointmentRepository currentAppointmentRepository, 
-                                       MessageConfigUtil messageConfigUtil) {
+    public CurrentAppointmentServiceImpl(CurrentAppointmentRepository currentAppointmentRepository,
+            MessageConfigUtil messageConfigUtil) {
         this.currentAppointmentRepository = currentAppointmentRepository;
         this.messageConfigUtil = messageConfigUtil;
     }
 
     @Override
     public CurrentAppointmentDTO getCurrentAppointmentById(UUID currentAppointmentId) {
-        CurrentAppointment appointment = currentAppointmentRepository.findByAppointment_AppointmentId(currentAppointmentId);
+        CurrentAppointment appointment = currentAppointmentRepository
+                .findByAppointment_AppointmentId(currentAppointmentId);
         if (Objects.isNull(appointment)) {
             throw new CurrentAppointmentNotFoundException(messageConfigUtil.getCurrentAppointmentNotFound());
         }
@@ -42,7 +42,8 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
     }
 
     @Override
-    public AppointmentResDTO getAppointmentStatusDoctorStatus(UUID currentAppointmentId) throws CurrentAppointmentNotFoundException {
+    public AppointmentResDTO getAppointmentStatusDoctorStatus(UUID currentAppointmentId)
+            throws CurrentAppointmentNotFoundException {
         AppointmentResDTO appointmentResDTO = new AppointmentResDTO();
         appointmentResDTO.setIsAppointedStatus(null);
         appointmentResDTO.setIsDoctorAppointed(null);
@@ -58,12 +59,13 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
             appointmentResDTO.setIsAppointedStatus(true);
             appointmentResDTO.setIsDoctorAppointed(currentAppointmentDTO.getDoctorDTO() != null);
         }
-        
+
         return appointmentResDTO;
     }
 
     @Override
-    public CurrentAppointmentDTO getCurrAppByDoctorId(String docEmail) throws CurrentAppointmentNotFoundException, DoctorNotFoundException {
+    public CurrentAppointmentDTO getCurrAppByDoctorId(String docEmail)
+            throws CurrentAppointmentNotFoundException, DoctorNotFoundException {
         if (Objects.isNull(docEmail)) {
             throw new DoctorNotFoundException(messageConfigUtil.getDoctorNotFoundException());
         }
@@ -74,29 +76,26 @@ public class CurrentAppointmentServiceImpl implements CurrentAppointmentService 
 
     @Override
     public String getCurrentTokenNumber(Long locationId) {
-        List<CurrentAppointment> currentAppointments =
-            currentAppointmentRepository.findCurrentByLocationId(locationId);
-    
+        List<CurrentAppointment> currentAppointments = currentAppointmentRepository.findCurrentByLocationId(locationId);
+
         if (currentAppointments == null || currentAppointments.isEmpty()) {
             log.warn("No current appointment found for location {}", locationId);
             return "N/A";
         }
-    
+
         return currentAppointments.stream()
-            .map(CurrentAppointment::getAppointment)
-            .filter(Objects::nonNull)
-            .map(app -> app.getTokenNo())
-            .filter(Objects::nonNull)
-            .max(Integer::compareTo)
-            .map(String::valueOf)
-            .orElse("N/A");
+                .map(CurrentAppointment::getAppointment)
+                .filter(Objects::nonNull)
+                .map(app -> app.getTokenNo())
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .map(String::valueOf)
+                .orElse("N/A");
     }
 
     @Override
     public CurrentAppointmentDTO getCurrentAppointmentDetails(Long locationId) {
         throw new UnsupportedOperationException("Unimplemented method 'getCurrentAppointmentDetails'");
     }
-    
-    
 
 }

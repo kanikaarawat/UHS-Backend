@@ -49,7 +49,9 @@ public class DoctorServiceImpl implements DoctorService {
     private final MedicalDetailsRepository medicalDetailsRepository;
     private final LocationRepository locationRepository;
 
-    public DoctorServiceImpl(DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, MessageConfigUtil messageConfigUtil,CurrentAppointmentRepository currentAppointmentRepository, MedicalDetailsRepository medicalDetailsRepository, LocationRepository locationRepository) {
+    public DoctorServiceImpl(DoctorRepository doctorRepository, AppointmentRepository appointmentRepository,
+            MessageConfigUtil messageConfigUtil, CurrentAppointmentRepository currentAppointmentRepository,
+            MedicalDetailsRepository medicalDetailsRepository, LocationRepository locationRepository) {
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
         this.messageConfigUtil = messageConfigUtil;
@@ -57,7 +59,6 @@ public class DoctorServiceImpl implements DoctorService {
         this.medicalDetailsRepository = medicalDetailsRepository;
         this.locationRepository = locationRepository;
     }
-
 
     @Override
     public DoctorDTO getDoctorById(String id) throws DoctorNotFoundException {
@@ -68,55 +69,52 @@ public class DoctorServiceImpl implements DoctorService {
         return new DoctorDTO(doctor.get());
     }
 
-
     @Override
     public Boolean getDoctorStatusById(String id) throws DoctorNotFoundException {
         if (Objects.isNull(id)) {
             throw new DoctorNotFoundException(messageConfigUtil.getDoctorNotFoundException());
         }
         Doctor doctor = doctorRepository.findByDoctorEmail(id).orElseThrow(
-                () -> new IllegalArgumentException("Doctor Status Not Found for the Id: " + id)
-        );
+                () -> new IllegalArgumentException("Doctor Status Not Found for the Id: " + id));
 
         return doctor.isStatus();
     }
 
-
     @Override
-    public Doctor setDoctorStatus(String id, Boolean isDoctorCheckIn, Double latitude, Double longitude) throws DoctorNotFoundException {
+    public Doctor setDoctorStatus(String id, Boolean isDoctorCheckIn, Double latitude, Double longitude)
+            throws DoctorNotFoundException {
         if (Objects.isNull(id)) {
             throw new DoctorNotFoundException(messageConfigUtil.getDoctorNotFoundException());
         }
         Doctor doctor = doctorRepository.findByDoctorEmail(id).orElseThrow(
-                () -> new IllegalArgumentException("Doctor Status Not Found for the Id: " + id)
-        );
+                () -> new IllegalArgumentException("Doctor Status Not Found for the Id: " + id));
 
         Optional<CurrentAppointment> curs = currentAppointmentRepository.findByDoctor(doctor);
 
-        if(curs.isPresent()) throw new IllegalArgumentException("Appointment already Assigned for the doctor");
+        if (curs.isPresent())
+            throw new IllegalArgumentException("Appointment already Assigned for the doctor");
 
-
-        if(isDoctorCheckIn){
+        if (isDoctorCheckIn) {
             List<Location> locations = locationRepository.findAll();
             Location presentLocation = null;
 
-            for(Location location:locations){
-                if(FunctionUtil.IsWithinRadius(location.getLatitude(), location.getLongitude(), latitude, longitude)){
+            for (Location location : locations) {
+                if (FunctionUtil.IsWithinRadius(location.getLatitude(), location.getLongitude(), latitude, longitude)) {
                     presentLocation = location;
                     break;
                 }
             }
 
-            if(presentLocation == null) throw new IllegalArgumentException("Must be present on location to Check In");
+            if (presentLocation == null)
+                throw new IllegalArgumentException("Must be present on location to Check In");
             doctor.setLocation(presentLocation);
-        }else{
+        } else {
             doctor.setLocation(null);
         }
 
         doctor.setStatus(isDoctorCheckIn);
         return doctorRepository.save(doctor);
     }
-
 
     @Override
     public HashMap<String, Integer> getAppointmentCountByDate(LocalDate date) throws AppointmentNotFoundException {
@@ -135,12 +133,10 @@ public class DoctorServiceImpl implements DoctorService {
         return dayMetrics;
     }
 
-
     @Override
-    public HashMap<LocalDate, Prescription> getPrescriptionHistory(String email)
-    {
-        email = email.substring(0,email.indexOf("@")).concat(email.substring(email.indexOf("@")).replaceAll(",", "."));
-        //put check
+    public HashMap<LocalDate, Prescription> getPrescriptionHistory(String email) {
+        email = email.substring(0, email.indexOf("@")).concat(email.substring(email.indexOf("@")).replaceAll(",", "."));
+        // put check
         List<Appointment> listOfAppointments = appointmentRepository.findByPatient_Email(email);
         HashMap<LocalDate, Prescription> mapOfPrescription = new HashMap<>();
 
@@ -150,45 +146,44 @@ public class DoctorServiceImpl implements DoctorService {
         return mapOfPrescription;
     }
 
-
     @Override
-public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
-    List<Location> locations = locationRepository.findAll();
-    Location presentLocation = null;
+    public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
+        List<Location> locations = locationRepository.findAll();
+        Location presentLocation = null;
 
-    for (Location location : locations) {
-        if (FunctionUtil.IsWithinRadius(location.getLatitude(), location.getLongitude(), latitude, longitude)) {
-            presentLocation = location;
-            break;
+        for (Location location : locations) {
+            if (FunctionUtil.IsWithinRadius(location.getLatitude(), location.getLongitude(), latitude, longitude)) {
+                presentLocation = location;
+                break;
+            }
         }
+
+        if (presentLocation == null) {
+            throw new IllegalArgumentException("Must be present in the location to get available doctors");
+        }
+
+        List<Doctor> byStatus = doctorRepository.findByStatusTrueAndLocation(presentLocation);
+        List<DoctorDTO> dtoList = byStatus.stream().map(DoctorDTO::new).toList();
+
+        return dtoList;
     }
 
-    if (presentLocation == null) {
-        throw new IllegalArgumentException("Must be present in the location to get available doctors");
-    }
-
-    List<Doctor> byStatus = doctorRepository.findByStatusTrueAndLocation(presentLocation);
-    List<DoctorDTO> dtoList = byStatus.stream().map(DoctorDTO::new).toList();
-
-    return dtoList;
-}
-
-    
     @Override
-     public List<DoctorDTO> getAllDoctors() throws DoctorNotFoundException {
-         List<Doctor> list = doctorRepository.findAll();
-         if (list.isEmpty()) {
-             throw new DoctorNotFoundException(messageConfigUtil.getDoctorNotFoundException());
-         }
-         return list.stream().map(DoctorDTO::new).toList();
-     }
-    
-     
+    public List<DoctorDTO> getAllDoctors() throws DoctorNotFoundException {
+        List<Doctor> list = doctorRepository.findAll();
+        if (list.isEmpty()) {
+            throw new DoctorNotFoundException(messageConfigUtil.getDoctorNotFoundException());
+        }
+        return list.stream().map(DoctorDTO::new).toList();
+    }
+
     @Override
     public PatientDetails getPatient(String doctorEmail) {
-        CurrentAppointment currentAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(doctorEmail).orElseThrow(()-> new ResourceNotFoundException("No Patient Assigned"));
+        CurrentAppointment currentAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(doctorEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("No Patient Assigned"));
 
-        if(currentAppointment.getAppointment() == null) throw new ResourceNotFoundException("No Appointment Found");
+        if (currentAppointment.getAppointment() == null)
+            throw new ResourceNotFoundException("No Appointment Found");
 
         Patient patient = currentAppointment.getAppointment().getPatient();
 
@@ -196,13 +191,13 @@ public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
 
         resp.setPatient(new PatientDTO(patient));
         resp.getPatient().setPassword("");
-        MedicalDetails medicalDetails = medicalDetailsRepository.findByPatient_Email(patient.getEmail()).orElseThrow(()->
-            new ResourceNotFoundException("No Medical Details Available")
-        );
+        MedicalDetails medicalDetails = medicalDetailsRepository.findByPatient_Email(patient.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No Medical Details Available"));
 
         resp.setMedicalDetails(new MedicalDetailsDTO(medicalDetails));
 
-        if(currentAppointment.getAppointment().getPrescription() != null) resp.setPrescription(new PrescriptionInfo(currentAppointment.getAppointment().getPrescription()));
+        if (currentAppointment.getAppointment().getPrescription() != null)
+            resp.setPrescription(new PrescriptionInfo(currentAppointment.getAppointment().getPrescription()));
 
         resp.getMedicalDetails().setWeight(currentAppointment.getAppointment().getWeight());
 
@@ -224,16 +219,16 @@ public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
 
         resp.setTemp(currentAppointment.getAppointment().getTemperature());
 
-        return resp; 
+        return resp;
 
     }
 
-
     @Override
     public Integer getCurrentTokenNo(String docEmail) throws InternalException {
-        CurrentAppointment currentAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(docEmail).orElseThrow(() -> new ResourceNotFoundException("No Appointment Assigned"));
+        CurrentAppointment currentAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(docEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("No Appointment Assigned"));
 
-        if(currentAppointment.getAppointment() == null){
+        if (currentAppointment.getAppointment() == null) {
             currentAppointment.setDoctor(null);
             currentAppointmentRepository.save(currentAppointment);
             throw new InternalException("Doctor assigned without a Appointment");
@@ -243,12 +238,13 @@ public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
 
     }
 
-
     @Override
     public ResponseEntity<?> releasePatient(String email) {
-        CurrentAppointment currentAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(email).orElseThrow(()->new ResourceNotFoundException("No Appointment Found"));
+        CurrentAppointment currentAppointment = currentAppointmentRepository.findByDoctor_DoctorEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("No Appointment Found"));
 
-        if(currentAppointment.getDoctor() == null) throw new ResourceNotFoundException("No Such Doctor exists");
+        if (currentAppointment.getDoctor() == null)
+            throw new ResourceNotFoundException("No Such Doctor exists");
 
         Doctor doctor = currentAppointment.getDoctor();
 
@@ -256,7 +252,8 @@ public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
         doctor = doctorRepository.save(doctor);
         currentAppointment.setDoctor(null);
 
-        if(currentAppointment.getAppointment() == null) throw new ResourceNotFoundException("No Appointment Found");
+        if (currentAppointment.getAppointment() == null)
+            throw new ResourceNotFoundException("No Appointment Found");
 
         Appointment appointment = currentAppointment.getAppointment();
         appointment.setDoctor(null);
@@ -269,6 +266,27 @@ public List<DoctorDTO> getAvailableDoctors(Double latitude, Double longitude) {
         AppointmentQueueManager.addAppointmentToQueue(currentAppointment.getAppointment().getAppointmentId());
 
         return createSuccessResponse("Patient Released");
-        
+
+    }
+
+    @Override
+    public Boolean isFollowUpAppointment(String patientEmail) {
+        // Check if current appointment is a follow-up
+        CurrentAppointment currentAppt = currentAppointmentRepository.findByPatient_Email(patientEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("No appointment found"));
+
+        return currentAppt.getIsFollowUp() != null && currentAppt.getIsFollowUp();
+    }
+
+    @Override
+    public Prescription getLastPrescription(String patientEmail) {
+        // Get the most recent prescription
+        List<Appointment> appointments = appointmentRepository.findByPatient_EmailOrderByDateDesc(patientEmail);
+
+        return appointments.stream()
+                .filter(appt -> appt.getPrescription() != null)
+                .findFirst()
+                .map(Appointment::getPrescription)
+                .orElse(null);
     }
 }

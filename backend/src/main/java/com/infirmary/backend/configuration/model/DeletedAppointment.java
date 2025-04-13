@@ -21,6 +21,8 @@ public class DeletedAppointment {
     private String patientEmail;
     private String reason;
     private LocalDateTime deletedAt;
-
+    private Boolean isFollowUp;
+    private UUID prevAppointmentId;
+    private UUID prevPrescriptionId;
     private String deletedBy; // AD email, optional
 }

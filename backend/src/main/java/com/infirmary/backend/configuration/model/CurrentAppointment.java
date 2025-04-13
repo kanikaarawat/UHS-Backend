@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.UUID;
+
 @Entity
 @Getter
 @Setter
@@ -30,5 +31,9 @@ public class CurrentAppointment implements Serializable {
     @JoinColumn(name = "doctor_email", referencedColumnName = "doctor_email")
     private Doctor doctor;
 
-    
+    @Column(name = "is_follow_up")
+    private Boolean isFollowUp;
+
+    @Column(name = "prev_prescription_id")
+    private UUID prevPrescriptionId;
 }

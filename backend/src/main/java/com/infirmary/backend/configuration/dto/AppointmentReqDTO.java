@@ -24,6 +24,7 @@ public class AppointmentReqDTO {
     private Boolean isFollowUp;
     private UUID preferredDoctor;
     private String reasonPrefDoctor;
+    private UUID prevAppointmentId;
 
     public AppointmentReqDTO(AppointmentForm appointmentForm) {
         this.reason = appointmentForm.getReason();

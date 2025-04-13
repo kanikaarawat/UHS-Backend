@@ -62,12 +62,16 @@ public class Appointment implements Serializable {
     private long timestamp;
 
     @Column(name = "status") // Ensure column exists or is created
-private String status;
+    private String status;
+    @Column(name = "is_follow_up")
+    private Boolean isFollowUp;
 
-@CreationTimestamp
-@Column(name = "created_at", updatable = false)
-private LocalDateTime createdAt;
-
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "prev_appointment_id")
+    private Appointment prevAppointment;
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     public Appointment(AppointmentDTO appointmentDTO) {
         if (appointmentDTO.getPatientDTO() != null) {

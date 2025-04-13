@@ -4,7 +4,7 @@ import com.infirmary.backend.configuration.model.Appointment;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import java.util.UUID;
 import java.time.LocalDate;
 
 @Getter
@@ -19,6 +19,8 @@ public class AppointmentDTO {
     private Integer tokenNo;
     private Float weight;
     private Float temperature;
+    private Boolean isFollowUp;
+    private UUID prevAppointmentId;
 
     public AppointmentDTO(Appointment appointment) {
         this.patientDTO = new PatientDTO(appointment.getPatient());
@@ -28,5 +30,9 @@ public class AppointmentDTO {
         this.tokenNo = appointment.getTokenNo();
         this.temperature = appointment.getTemperature();
         this.weight = appointment.getWeight();
+        this.isFollowUp = appointment.getIsFollowUp();
+        this.prevAppointmentId = appointment.getPrevAppointment() != null
+                ? appointment.getPrevAppointment().getAppointmentId()
+                : null;
     }
 }
