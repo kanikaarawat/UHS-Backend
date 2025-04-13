@@ -21,18 +21,6 @@ public class CurrentAppointmentDTO {
     public CurrentAppointmentDTO(CurrentAppointment currentAppointment) {
         this.currentAppointmentId = currentAppointment.getCurrentAppointmentId();
 
-        // Null-safe initialization
-        this.appointmentDTO = currentAppointment.getAppointment() != null
-                ? new AppointmentDTO(currentAppointment.getAppointment())
-                : null;
-
-        this.patientDTO = currentAppointment.getPatient() != null
-                ? new PatientDTO(currentAppointment.getPatient())
-                : null;
-
-        this.doctorDTO = currentAppointment.getDoctor() != null
-                ? new DoctorDTO(currentAppointment.getDoctor())
-                : null;
         this.appointmentDTO = currentAppointment.getAppointment() != null
                 ? new AppointmentDTO(currentAppointment.getAppointment())
                 : null;
@@ -45,9 +33,8 @@ public class CurrentAppointmentDTO {
                 ? new DoctorDTO(currentAppointment.getDoctor())
                 : null;
 
-        // Map new fields
         this.isFollowUp = currentAppointment.getIsFollowUp();
         this.prevPrescriptionId = currentAppointment.getPrevPrescriptionId();
-
     }
+
 }

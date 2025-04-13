@@ -87,5 +87,11 @@ public class Appointment implements Serializable {
         this.tokenNo = appointmentDTO.getTokenNo();
         this.temperature = appointmentDTO.getTemperature();
         this.weight = appointmentDTO.getWeight();
+        this.isFollowUp = appointmentDTO.getIsFollowUp(); // assuming getter exists
+
+        if (appointmentDTO.getPrevAppointmentId() != null) {
+            this.prevAppointment = new Appointment(); // or fetch from DB if needed
+            this.prevAppointment.setAppointmentId(appointmentDTO.getPrevAppointmentId());
+        }
     }
 }
